@@ -10,7 +10,7 @@ import net.minestom.server.instance.InstanceManager;
 import net.minestom.server.instance.LightingChunk;
 import net.minestom.server.instance.block.Block;
 
-public final class Main {
+public final class MainOld {
     static void main() {
         MinecraftServer minecraftServer = MinecraftServer.init();
         InstanceContainer instanceContainer = createInstance();
@@ -21,6 +21,8 @@ public final class Main {
             event.setSpawningInstance(instanceContainer);
             player.setRespawnPoint(new Pos(0, 42, 0));
         });
+
+
 
         minecraftServer.start("0.0.0.0", 25565);
     }

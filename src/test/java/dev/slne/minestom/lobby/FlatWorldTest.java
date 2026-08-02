@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class FlatWorldTest {
     @Test
     void generatesVanillaFlatWorld(Env env) {
-        InstanceContainer instance = Main.createInstance();
+        InstanceContainer instance = MainOld.createInstance();
         try {
             instance.loadChunk(0, 0).join();
 
