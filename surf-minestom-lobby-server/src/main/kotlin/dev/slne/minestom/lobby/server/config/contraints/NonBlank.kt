@@ -1,4 +1,4 @@
-package dev.slne.minestom.lobby.config.contraints
+package dev.slne.minestom.lobby.server.config.contraints
 
 import org.spongepowered.configurate.objectmapping.meta.Constraint
 import org.spongepowered.configurate.serialize.SerializationException

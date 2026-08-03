@@ -1,4 +1,4 @@
-package dev.slne.minestom.lobby.config
+package dev.slne.minestom.lobby.server.config
 
 import org.spongepowered.configurate.kotlin.dataClassFieldDiscoverer
 import org.spongepowered.configurate.kotlin.extensions.get
@@ -9,17 +9,12 @@ import java.nio.file.Path
 import kotlin.io.path.absolute
 
 class ServerConfigLoader(private val path: Path) {
-
-    @Volatile
-    var config: ServerConfig? = null
-        private set
-
     private val loader = YamlConfigurationLoader.builder()
         .path(path)
         .indent(2)
         .defaultOptions { options ->
-            options.serializers { builder ->
-                builder.registerAnnotatedObjects(
+            options.serializers { serializers ->
+                serializers.registerAnnotatedObjects(
                     ObjectMapper.factoryBuilder()
                         .addDiscoverer(dataClassFieldDiscoverer())
                         .build()
@@ -33,8 +28,6 @@ class ServerConfigLoader(private val path: Path) {
 
         val fileExisted = Files.exists(path)
         val root = loader.load()
-
-
         val migrated = ConfigMigrations.migrate(root)
 
         val config = if (fileExisted) {
@@ -51,31 +44,9 @@ class ServerConfigLoader(private val path: Path) {
             loader.save(root)
         }
 
-        this.config = config
-
         return config
     }
 
     private fun validate(config: ServerConfig) {
-
-    }
-
-    fun getConfig(): ServerConfig {
-        return config ?: error("Configuration not loaded. Call load() first.")
-    }
-
-    companion object {
-        private lateinit var manager: ServerConfigLoader
-
-        fun load(path: Path) {
-            manager = ServerConfigLoader(path)
-            manager.load()
-        }
-
-        fun get(): ServerConfig {
-            return manager.getConfig()
-        }
     }
 }
-
-val serverConfig get() = ServerConfigLoader.get()

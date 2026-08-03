@@ -1,7 +1,7 @@
-package dev.slne.minestom.lobby.config
+package dev.slne.minestom.lobby.server.config
 
-import dev.slne.minestom.lobby.config.contraints.NonBlank
-import dev.slne.minestom.lobby.config.types.ConfigPosition
+import dev.slne.minestom.lobby.server.config.contraints.NonBlank
+import dev.slne.minestom.lobby.server.config.types.ConfigPosition
 import org.spongepowered.configurate.objectmapping.ConfigSerializable
 import org.spongepowered.configurate.objectmapping.meta.Comment
 import org.spongepowered.configurate.objectmapping.meta.Setting

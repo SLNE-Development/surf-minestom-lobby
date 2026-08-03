@@ -1,4 +1,4 @@
-package dev.slne.minestom.lobby.config
+package dev.slne.minestom.lobby.server.config
 
 import org.spongepowered.configurate.CommentedConfigurationNode
 

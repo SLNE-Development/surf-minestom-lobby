@@ -1,4 +1,30 @@
-
 [versions]
+kotlin = "2.4.10"
+shadow = "9.6.1"
+
+minestom = "2026.07.22-26.2"
+guice = "7.0.0"
+coroutines = "1.10.2"
+configurate = "4.2.0"
+junit = "6.1.2"
 
 [libraries]
+minestom = { module = "net.minestom:minestom", version.ref = "minestom" }
+minestom-testing = { module = "net.minestom:testing", version.ref = "minestom" }
+
+guice = { module = "com.google.inject:guice", version.ref = "guice" }
+coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
+
+configurate-yaml = { module = "org.spongepowered:configurate-yaml", version.ref = "configurate" }
+configurate-kotlin = { module = "org.spongepowered:configurate-extra-kotlin", version.ref = "configurate" }
+
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
+
+surf-api-minestom = { module = "dev.slne.surf.api:surf-api-minestom", version = "+" }
+surf-redis-minestom = { module = "dev.slne.surf.redis:surf-redis-minestom", version = "+" }
+surf-rabbitmq-minestom = { module = "dev.slne.surf.rabbitmq:surf-rabbitmq-minestom", version = "+" }
+surf-lobby-minestom = { module = "dev.slne.surf.lobby:surf-lobby-minestom", version = "+" }
+
+[plugins]
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+shadow = { id = "com.gradleup.shadow", version.ref = "shadow" }

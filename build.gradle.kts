@@ -1,46 +1,15 @@
 plugins {
-    application
-    id("com.gradleup.shadow") version "9.6.1"
-    kotlin("jvm") version "2.4.10"
+    alias(libs.plugins.kotlin.jvm) apply false
+    alias(libs.plugins.shadow) apply false
 }
 
 allprojects {
     group = "dev.slne.minestom.lobby"
+    version = "1.0.0-SNAPSHOT"
 }
 
-dependencies {
-    implementation("net.minestom:minestom:2026.07.22-26.2")
-
-    implementation("org.spongepowered:configurate-yaml:4.2.0")
-    implementation("org.spongepowered:configurate-extra-kotlin:4.2.0")
-
-    testImplementation("net.minestom:testing:2026.07.22-26.2")
-    testImplementation("org.junit.jupiter:junit-jupiter:6.1.2")
-}
-
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(25)
+subprojects {
+    tasks.withType<Test>().configureEach {
+        useJUnitPlatform()
     }
-}
-
-application {
-    mainClass = "dev.slne.minestom.lobby.Main"
-}
-
-tasks.jar {
-    manifest {
-        attributes["Main-Class"] = "dev.slne.minestom.lobby.Main"
-    }
-}
-tasks.test {
-    useJUnitPlatform()
-}
-tasks.withType<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>().configureEach {
-    mergeServiceFiles()
-    archiveClassifier.set("")
-}
-
-tasks.named("build") {
-    dependsOn(tasks.named("shadowJar"))
 }

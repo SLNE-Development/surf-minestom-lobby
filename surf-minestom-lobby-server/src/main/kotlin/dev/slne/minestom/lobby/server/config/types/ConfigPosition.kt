@@ -1,4 +1,4 @@
-package dev.slne.minestom.lobby.config.types
+package dev.slne.minestom.lobby.server.config.types
 
 import net.minestom.server.coordinate.Pos
 import org.spongepowered.configurate.objectmapping.ConfigSerializable
