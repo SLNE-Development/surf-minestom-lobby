@@ -1,3 +1,5 @@
+enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
+
 pluginManagement {
     repositories {
         gradlePluginPortal()
@@ -13,3 +15,6 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "surf-minestom-lobby"
+
+include(":surf-minestom-lobby-api")
+include(":surf-minestom-lobby-server")

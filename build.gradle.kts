@@ -4,7 +4,9 @@ plugins {
     kotlin("jvm") version "2.4.10"
 }
 
-group = "dev.slne.minestom.lobby"
+allprojects {
+    group = "dev.slne.minestom.lobby"
+}
 
 dependencies {
     implementation("net.minestom:minestom:2026.07.22-26.2")
