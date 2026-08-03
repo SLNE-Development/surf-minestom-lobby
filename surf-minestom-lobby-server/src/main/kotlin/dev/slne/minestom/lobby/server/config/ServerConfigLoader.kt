@@ -3,6 +3,7 @@ package dev.slne.minestom.lobby.server.config
 import org.spongepowered.configurate.kotlin.dataClassFieldDiscoverer
 import org.spongepowered.configurate.kotlin.extensions.get
 import org.spongepowered.configurate.objectmapping.ObjectMapper
+import org.spongepowered.configurate.yaml.NodeStyle
 import org.spongepowered.configurate.yaml.YamlConfigurationLoader
 import java.nio.file.Files
 import java.nio.file.Path
@@ -12,6 +13,7 @@ class ServerConfigLoader(private val path: Path) {
     private val loader = YamlConfigurationLoader.builder()
         .path(path)
         .indent(2)
+        .nodeStyle(NodeStyle.BLOCK)
         .defaultOptions { options ->
             options.serializers { serializers ->
                 serializers.registerAnnotatedObjects(
