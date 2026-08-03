@@ -10,6 +10,7 @@ dependencies {
     implementation(libs.minestom)
     implementation(libs.guice)
     implementation(libs.coroutines.core)
+    implementation(libs.bundles.log4j)
 
     implementation(libs.configurate.yaml)
     implementation(libs.configurate.kotlin)
