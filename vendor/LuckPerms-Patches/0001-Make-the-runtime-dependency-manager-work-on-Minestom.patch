@@ -1,0 +1,338 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: twisti-dev <twisti@slne.dev>
+Date: Mon, 3 Aug 2026 23:47:24 +0200
+Subject: [PATCH] Make the runtime dependency manager work on Minestom
+
+LuckPerms is embedded as a plain library on Minestom, so it is loaded by the
+system class loader and its own classes are not relocated at build time. Both
+facts broke the dependency manager, which was stubbed out with no-ops.
+
+ - skip dependency relocation on Minestom, so downloaded jars keep the package
+   names LuckPerms itself was compiled against
+ - append downloaded jars to the system class loader via the instrumentation
+   API, which requires the host application to install LuckPermsAgent
+ - let embedders supply their own ClassPathAppender via the builder
+ - use the real DependencyManagerImpl, with no global dependencies to download
+   because those ship with the luckperms-minestom library
+
+diff --git a/common/src/main/java/me/lucko/luckperms/common/dependencies/DependencyRegistry.java b/common/src/main/java/me/lucko/luckperms/common/dependencies/DependencyRegistry.java
+index 088b25caae5246969dbdcccf242ebc1071b5537f..e68d39505a110b2e85794193cc0d5d500bb68ac6 100644
+--- a/common/src/main/java/me/lucko/luckperms/common/dependencies/DependencyRegistry.java
++++ b/common/src/main/java/me/lucko/luckperms/common/dependencies/DependencyRegistry.java
+@@ -64,6 +64,17 @@ public class DependencyRegistry {
+             Platform.Type.BUKKIT, Platform.Type.BUNGEECORD, Platform.Type.SPONGE, Platform.Type.NUKKIT
+     );
+ 
++    /**
++     * Platforms on which LuckPerms is shipped as a plain library instead of a shaded plugin jar.
++     *
++     * <p>Its own classes are not relocated at build time on these platforms, so it still refers to
++     * dependencies by their original package names - meaning downloaded dependencies must be left
++     * alone too.</p>
++     */
++    private static final Set<Platform.Type> DEPENDENCIES_NOT_RELOCATED = ImmutableSet.of(
++            Platform.Type.MINESTOM
++    );
++
+     private final Platform.Type platformType;
+ 
+     public DependencyRegistry(Platform.Type platformType) {
+@@ -106,6 +117,13 @@ public class DependencyRegistry {
+     }
+ 
+     public void applyRelocationSettings(Dependency dependency, List<Relocation> relocations) {
++        // nothing is relocated on these platforms - clearing the rules means the dependency is used
++        // as-is, and also avoids pulling in the jar relocator machinery at all
++        if (DEPENDENCIES_NOT_RELOCATED.contains(this.platformType)) {
++            relocations.clear();
++            return;
++        }
++
+         // support for LuckPerms legacy (bukkit 1.7.10)
+         if (!RelocationHandler.DEPENDENCIES.contains(dependency) && isGsonRelocated()) {
+             relocations.add(Relocation.of("guava", "com{}google{}common"));
+diff --git a/minestom/src/main/java/me/lucko/luckperms/minestom/LPMinestomBootstrap.java b/minestom/src/main/java/me/lucko/luckperms/minestom/LPMinestomBootstrap.java
+index 9e9d5611c33ebca4463c32f78c08fab0c10ce826..30ac8d166cc834ea41db3e5ca201b24160e4e536 100644
+--- a/minestom/src/main/java/me/lucko/luckperms/minestom/LPMinestomBootstrap.java
++++ b/minestom/src/main/java/me/lucko/luckperms/minestom/LPMinestomBootstrap.java
+@@ -15,7 +15,7 @@ import me.lucko.luckperms.common.plugin.logging.PluginLogger;
+ import me.lucko.luckperms.common.plugin.logging.Slf4jPluginLogger;
+ import me.lucko.luckperms.common.plugin.scheduler.SchedulerAdapter;
+ import me.lucko.luckperms.minestom.context.ContextProvider;
+-import me.lucko.luckperms.minestom.dependencies.NoopClassPathAppender;
++import me.lucko.luckperms.minestom.dependencies.InstrumentationClassPathAppender;
+ import net.luckperms.api.platform.Platform;
+ import net.minestom.server.MinecraftServer;
+ import net.minestom.server.entity.Player;
+@@ -28,6 +28,7 @@ public final class LPMinestomBootstrap implements LuckPermsBootstrap {
+     private final Path dataDirectory;
+     private final PluginLogger logger;
+     private final SchedulerAdapter schedulerAdapter;
++    private final ClassPathAppender classPathAppender;
+     private final LPMinestomPlugin plugin;
+ 
+     private final CountDownLatch loadLatch = new CountDownLatch(1);
+@@ -41,11 +42,15 @@ public final class LPMinestomBootstrap implements LuckPermsBootstrap {
+             @NotNull Set<ContextProvider> contextProviders,
+             @NotNull Function<LPMinestomPlugin, ConfigurationAdapter> configurationAdapter,
+             @NotNull Set<String> permissionSuggestions,
+-            @Nullable CommandRegistry commandRegistry
++            @Nullable CommandRegistry commandRegistry,
++            @Nullable ClassPathAppender classPathAppender
+     ) {
+         this.logger = new Slf4jPluginLogger(logger);
+         this.dataDirectory = dataDirectory;
+         this.schedulerAdapter = new MinestomSchedulerAdapter(this);
++        this.classPathAppender = classPathAppender != null
++                ? classPathAppender
++                : InstrumentationClassPathAppender.createOrFallBack(this.logger);
+         this.plugin = new LPMinestomPlugin(this, contextProviders, configurationAdapter, permissionSuggestions, commandRegistry);
+     }
+ 
+@@ -83,7 +88,7 @@ public final class LPMinestomBootstrap implements LuckPermsBootstrap {
+ 
+     @Override
+     public ClassPathAppender getClassPathAppender() {
+-        return NoopClassPathAppender.INSTANCE;
++        return this.classPathAppender;
+     }
+ 
+     @Override
+diff --git a/minestom/src/main/java/me/lucko/luckperms/minestom/LPMinestomPlugin.java b/minestom/src/main/java/me/lucko/luckperms/minestom/LPMinestomPlugin.java
+index 898e8f4bc789a4f2540c34b8ec379345bff067a8..e0fcb2bfd06fb74f76a9e25f6963fe6c2404e11a 100644
+--- a/minestom/src/main/java/me/lucko/luckperms/minestom/LPMinestomPlugin.java
++++ b/minestom/src/main/java/me/lucko/luckperms/minestom/LPMinestomPlugin.java
+@@ -2,6 +2,7 @@ package me.lucko.luckperms.minestom;
+ 
+ import java.nio.file.Path;
+ import java.util.Collection;
++import java.util.EnumSet;
+ import java.util.Optional;
+ import java.util.Set;
+ import java.util.function.Function;
+@@ -11,7 +12,7 @@ import me.lucko.luckperms.common.calculator.CalculatorFactory;
+ import me.lucko.luckperms.common.command.CommandManager;
+ import me.lucko.luckperms.common.config.ConfigKeys;
+ import me.lucko.luckperms.common.config.generic.adapter.ConfigurationAdapter;
+-import me.lucko.luckperms.common.dependencies.DependencyManager;
++import me.lucko.luckperms.common.dependencies.Dependency;
+ import me.lucko.luckperms.common.event.AbstractEventBus;
+ import me.lucko.luckperms.common.messaging.MessagingFactory;
+ import me.lucko.luckperms.common.model.Group;
+@@ -31,7 +32,6 @@ import me.lucko.luckperms.minestom.calculator.MinestomCalculatorFactory;
+ import me.lucko.luckperms.minestom.context.ContextProvider;
+ import me.lucko.luckperms.minestom.context.MinestomContextManager;
+ import me.lucko.luckperms.minestom.context.MinestomPlayerCalculator;
+-import me.lucko.luckperms.minestom.dependencies.NoopDependencyManager;
+ import me.lucko.luckperms.minestom.listeners.MinestomCommandListUpdater;
+ import me.lucko.luckperms.minestom.listeners.MinestomConnectionListener;
+ import me.lucko.luckperms.minestom.messaging.MinestomMessagingFactory;
+@@ -213,8 +213,11 @@ public final class LPMinestomPlugin extends AbstractLuckPermsPlugin {
+     }
+ 
+     @Override
+-    protected @NotNull DependencyManager createDependencyManager() {
+-        return NoopDependencyManager.INSTANCE;
++    protected @NotNull Set<Dependency> getGlobalDependencies() {
++        // adventure, caffeine, okio, okhttp, byte-buddy and the event bus are shipped as ordinary
++        // (non-relocated) dependencies of the luckperms-minestom library, so unlike on the other
++        // platforms there is nothing to download here
++        return EnumSet.noneOf(Dependency.class);
+     }
+ 
+ }
+diff --git a/minestom/src/main/java/me/lucko/luckperms/minestom/LuckPermsMinestom.java b/minestom/src/main/java/me/lucko/luckperms/minestom/LuckPermsMinestom.java
+index fd3b00b03c185096307969557d9c07f226337f75..69834720b5682f4afdf681c6734f347386a3c7fb 100644
+--- a/minestom/src/main/java/me/lucko/luckperms/minestom/LuckPermsMinestom.java
++++ b/minestom/src/main/java/me/lucko/luckperms/minestom/LuckPermsMinestom.java
+@@ -8,7 +8,9 @@ import java.util.function.Consumer;
+ import java.util.function.Function;
+ import me.lucko.luckperms.common.config.generic.adapter.ConfigurationAdapter;
+ import me.lucko.luckperms.common.config.generic.adapter.EnvironmentVariableConfigAdapter;
++import me.lucko.luckperms.common.plugin.classpath.ClassPathAppender;
+ import me.lucko.luckperms.minestom.context.ContextProvider;
++import me.lucko.luckperms.minestom.dependencies.LuckPermsAgent;
+ import net.luckperms.api.LuckPerms;
+ import net.luckperms.api.LuckPermsProvider;
+ import net.minestom.server.command.builder.Command;
+@@ -159,6 +161,22 @@ public final class LuckPermsMinestom {
+         @NotNull Builder logger(@NotNull Logger logger);
+ 
+ 
++        /**
++         * Sets the class path appender used to load runtime dependencies, such as storage drivers
++         * and messaging clients.
++         *
++         * <p>If unset, LuckPerms appends to the system class loader using the instrumentation API,
++         * which requires an agent to be installed - see {@link LuckPermsAgent}. Applications that
++         * run LuckPerms inside a class loader they control should pass an appender for that class
++         * loader instead.</p>
++         *
++         * @param appender the appender to use
++         * @return the builder instance
++         */
++        @Contract("_ -> this")
++        @NotNull Builder classPathAppender(@Nullable ClassPathAppender appender);
++
++
+         /**
+          * Enables LuckPerms
+          *
+@@ -177,6 +195,7 @@ public final class LuckPermsMinestom {
+         private @Nullable CommandRegistry commandRegistry;
+         private @NotNull Function<LPMinestomPlugin, ConfigurationAdapter> configurationAdapter = EnvironmentVariableConfigAdapter::new;
+         private @NotNull Logger logger = LoggerFactory.getLogger(LuckPermsMinestom.class);
++        private @Nullable ClassPathAppender classPathAppender;
+ 
+         private BuilderImpl(@NotNull Path dataDirectory) {
+             this.dataDirectory = dataDirectory;
+@@ -234,6 +253,12 @@ public final class LuckPermsMinestom {
+             return this;
+         }
+ 
++        @Override
++        public @NotNull Builder classPathAppender(@Nullable ClassPathAppender appender) {
++            this.classPathAppender = appender;
++            return this;
++        }
++
+         @Override
+         public @NotNull LuckPerms enable() {
+             bootstrap = new LPMinestomBootstrap(
+@@ -242,7 +267,8 @@ public final class LuckPermsMinestom {
+                     this.contextProviders,
+                     this.configurationAdapter,
+                     this.permissionSuggestions,
+-                    this.commandRegistry
++                    this.commandRegistry,
++                    this.classPathAppender
+             );
+             bootstrap.onEnable();
+             return LuckPermsProvider.get();
+diff --git a/minestom/src/main/java/me/lucko/luckperms/minestom/dependencies/InstrumentationClassPathAppender.java b/minestom/src/main/java/me/lucko/luckperms/minestom/dependencies/InstrumentationClassPathAppender.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..d3ea06fc70f11fb1624729e62313db1388462687
+--- /dev/null
++++ b/minestom/src/main/java/me/lucko/luckperms/minestom/dependencies/InstrumentationClassPathAppender.java
+@@ -0,0 +1,57 @@
++package me.lucko.luckperms.minestom.dependencies;
++
++import java.io.IOException;
++import java.io.UncheckedIOException;
++import java.lang.instrument.Instrumentation;
++import java.nio.file.Path;
++import java.util.jar.JarFile;
++import me.lucko.luckperms.common.plugin.classpath.ClassPathAppender;
++import me.lucko.luckperms.common.plugin.logging.PluginLogger;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * A {@link ClassPathAppender} that adds jars to the system class loader using the instrumentation
++ * API, which is the only supported way of extending the system class path at runtime.
++ */
++public final class InstrumentationClassPathAppender implements ClassPathAppender {
++
++    /**
++     * Creates an appender, if an agent has made an {@link Instrumentation} instance available.
++     *
++     * @param logger the logger to warn on, if no agent is installed
++     * @return the appender, or {@link NoopClassPathAppender} if no agent is installed
++     */
++    public static @NotNull ClassPathAppender createOrFallBack(@NotNull PluginLogger logger) {
++        Instrumentation instrumentation = LuckPermsAgent.getInstrumentation();
++        if (instrumentation != null) {
++            return new InstrumentationClassPathAppender(instrumentation);
++        }
++
++        logger.warn("Unable to append jars to the class path at runtime, so LuckPerms cannot load " +
++                "its own dependencies. Any storage or messaging backend that is not already on the " +
++                "class path will fail to initialise. To fix this, either add 'Launcher-Agent-Class: " +
++                LuckPermsAgent.class.getName() + "' to the manifest of your application jar, start " +
++                "the server with '-javaagent:<your-jar>', or supply your own ClassPathAppender via " +
++                "LuckPermsMinestom.Builder#classPathAppender.");
++
++        return NoopClassPathAppender.INSTANCE;
++    }
++
++    private final @NotNull Instrumentation instrumentation;
++
++    private InstrumentationClassPathAppender(@NotNull Instrumentation instrumentation) {
++        this.instrumentation = instrumentation;
++    }
++
++    @Override
++    public void addJarToClasspath(Path file) {
++        try {
++            // the JVM takes ownership of the JarFile and may keep it open for the rest of the
++            // process lifetime, so it must not be closed here
++            this.instrumentation.appendToSystemClassLoaderSearch(new JarFile(file.toFile()));
++        } catch (IOException e) {
++            throw new UncheckedIOException("Unable to add " + file + " to the system class path", e);
++        }
++    }
++
++}
+diff --git a/minestom/src/main/java/me/lucko/luckperms/minestom/dependencies/LuckPermsAgent.java b/minestom/src/main/java/me/lucko/luckperms/minestom/dependencies/LuckPermsAgent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..f950496f47b83a58cc5fb793dde975aa9cd5e840
+--- /dev/null
++++ b/minestom/src/main/java/me/lucko/luckperms/minestom/dependencies/LuckPermsAgent.java
+@@ -0,0 +1,58 @@
++package me.lucko.luckperms.minestom.dependencies;
++
++import java.lang.instrument.Instrumentation;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++/**
++ * Captures the {@link Instrumentation} instance that LuckPerms uses to load its runtime
++ * dependencies.
++ *
++ * <p>Unlike the other platforms, LuckPerms is embedded as a plain library on Minestom, so it is
++ * loaded by the system class loader rather than by a class loader LuckPerms owns. Appending to the
++ * system class loader is only possible through the instrumentation API, and the JVM only hands that
++ * out to an agent - so the host application has to install one. Either:</p>
++ *
++ * <ul>
++ * <li>add {@code Launcher-Agent-Class: me.lucko.luckperms.minestom.dependencies.LuckPermsAgent} to
++ * the manifest of the executable jar (works out of the box with {@code java -jar}), or</li>
++ * <li>start the server with {@code -javaagent:<jar>}, pointing at a jar containing this class.</li>
++ * </ul>
++ *
++ * <p>Applications that run LuckPerms inside a class loader they control don't need an agent at all
++ * and should pass their own appender to
++ * {@link me.lucko.luckperms.minestom.LuckPermsMinestom.Builder#classPathAppender} instead.</p>
++ */
++public final class LuckPermsAgent {
++
++    private static volatile @Nullable Instrumentation instrumentation;
++
++    private LuckPermsAgent() {
++
++    }
++
++    /**
++     * Called by the JVM when this class is used as a {@code -javaagent}.
++     */
++    public static void premain(@Nullable String args, @NotNull Instrumentation instrumentation) {
++        LuckPermsAgent.instrumentation = instrumentation;
++    }
++
++    /**
++     * Called by the JVM when this class is declared as the {@code Launcher-Agent-Class} of an
++     * executable jar, or when the agent is attached to a running JVM.
++     */
++    public static void agentmain(@Nullable String args, @NotNull Instrumentation instrumentation) {
++        LuckPermsAgent.instrumentation = instrumentation;
++    }
++
++    /**
++     * Gets the captured instrumentation instance.
++     *
++     * @return the instrumentation instance, or null if no agent has been installed
++     */
++    public static @Nullable Instrumentation getInstrumentation() {
++        return instrumentation;
++    }
++
++}

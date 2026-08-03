@@ -9,6 +9,8 @@ dependencies {
     compileOnlyApi(libs.guice)
     compileOnlyApi(libs.coroutines.core)
     compileOnlyApi(libs.bundles.log4j)
+
+    api(libs.bundles.lamp)
 }
 
 kotlin {

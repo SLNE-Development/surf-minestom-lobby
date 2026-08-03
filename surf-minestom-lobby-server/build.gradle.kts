@@ -1,7 +1,14 @@
+import sun.jvmstat.monitor.MonitoredVmUtil.mainClass
+
 plugins {
     application
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.shadow)
+}
+
+repositories {
+    mavenCentral()
+//    maven("https://repo.hypera.dev/snapshots/")
 }
 
 dependencies {
@@ -14,6 +21,7 @@ dependencies {
 
     implementation(libs.configurate.yaml)
     implementation(libs.configurate.kotlin)
+    implementation(libs.luckperms.minestom)
 
 
 //    runtimeOnly(libs.surf.api.minestom)
@@ -39,6 +47,7 @@ tasks.shadowJar {
 
     manifest {
         attributes["Main-Class"] = "dev.slne.minestom.lobby.MainKt"
+        attributes["Launcher-Agent-Class"] = "me.lucko.luckperms.minestom.dependencies.LuckPermsAgent"
     }
 }
 

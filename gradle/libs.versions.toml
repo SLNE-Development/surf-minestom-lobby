@@ -9,6 +9,9 @@ configurate = "4.2.0"
 junit = "6.1.2"
 log4j = "2.26.1"
 
+lamp = "4.0.0-rc.18"
+luckperms-minestom = "5.5+26.2-SNAPSHOT" # substituted by the vendor/LuckPerms included build
+
 [libraries]
 minestom = { module = "net.minestom:minestom", version.ref = "minestom" }
 minestom-testing = { module = "net.minestom:testing", version.ref = "minestom" }
@@ -30,9 +33,14 @@ log4j-api = { module = "org.apache.logging.log4j:log4j-api", version.ref = "log4
 log4j-core = { module = "org.apache.logging.log4j:log4j-core", version.ref = "log4j" }
 log4j-slf4j2-impl = { module = "org.apache.logging.log4j:log4j-slf4j2-impl", version.ref = "log4j" }
 
+lamp-common = { module = "io.github.revxrsal:lamp.common", version.ref = "lamp" }
+lamp-minestom = { module = "io.github.revxrsal:lamp.minestom", version.ref = "lamp" }
+luckperms-minestom = { module = "club.tesseract:luckperms-minestom", version.ref = "luckperms-minestom" }
+
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 shadow = { id = "com.gradleup.shadow", version.ref = "shadow" }
 
 [bundles]
 log4j = ["log4j-api", "log4j-core", "log4j-slf4j2-impl"]
+lamp = ["lamp-common", "lamp-minestom"]
