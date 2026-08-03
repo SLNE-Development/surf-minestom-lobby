@@ -10,7 +10,7 @@ object ConfigMigrations {
 
         while (version < ServerConfig.CURRENT_VERSION) {
             when (version) {
-                1 -> Unit
+                0 -> Unit
                 else -> error("Unsupported configuration version $version")
             }
 
