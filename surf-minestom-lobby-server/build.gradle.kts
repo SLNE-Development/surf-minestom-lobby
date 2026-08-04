@@ -1,3 +1,4 @@
+import com.github.jengelman.gradle.plugins.shadow.transformers.Log4j2PluginsCacheFileTransformer
 import sun.jvmstat.monitor.MonitoredVmUtil.mainClass
 
 plugins {
@@ -18,6 +19,7 @@ dependencies {
     implementation(libs.guice)
     implementation(libs.coroutines.core)
     implementation(libs.bundles.log4j)
+    implementation(libs.terminal.console.appender)
 
     implementation(libs.configurate.yaml)
     implementation(libs.configurate.kotlin)
@@ -43,11 +45,14 @@ application {
 
 tasks.shadowJar {
     archiveClassifier.set("")
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
     mergeServiceFiles()
+    transform<Log4j2PluginsCacheFileTransformer>()
 
     manifest {
         attributes["Main-Class"] = "dev.slne.minestom.lobby.MainKt"
         attributes["Launcher-Agent-Class"] = "me.lucko.luckperms.minestom.dependencies.LuckPermsAgent"
+        attributes["Multi-Release"] = "true"
     }
 }
 

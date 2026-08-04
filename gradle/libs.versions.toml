@@ -8,6 +8,7 @@ coroutines = "1.10.2"
 configurate = "4.2.0"
 junit = "6.1.2"
 log4j = "2.26.1"
+terminal-console-appender = "1.3.0"
 
 lamp = "4.0.0-rc.18"
 luckperms-minestom = "5.5+26.2-SNAPSHOT" # substituted by the vendor/LuckPerms included build
@@ -32,6 +33,7 @@ surf-lobby-minestom = { module = "dev.slne.surf.lobby:surf-lobby-minestom", vers
 log4j-api = { module = "org.apache.logging.log4j:log4j-api", version.ref = "log4j" }
 log4j-core = { module = "org.apache.logging.log4j:log4j-core", version.ref = "log4j" }
 log4j-slf4j2-impl = { module = "org.apache.logging.log4j:log4j-slf4j2-impl", version.ref = "log4j" }
+terminal-console-appender = { module = "net.minecrell:terminalconsoleappender", version.ref = "terminal-console-appender" }
 
 lamp-common = { module = "io.github.revxrsal:lamp.common", version.ref = "lamp" }
 lamp-minestom = { module = "io.github.revxrsal:lamp.minestom", version.ref = "lamp" }

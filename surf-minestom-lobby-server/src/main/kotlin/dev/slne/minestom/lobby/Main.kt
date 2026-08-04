@@ -14,11 +14,24 @@ import net.minestom.server.MinecraftServer
 import kotlin.io.path.Path
 
 fun main() {
+    MinecraftServer.LOGGER.info("Loading server configuration.")
     val config = ServerConfigLoader(Path("config.yml")).load()
 
+    MinecraftServer.LOGGER.info(
+        "Initializing Minestom server for {}:{}.",
+        config.address.host,
+        config.address.port,
+    )
     val minecraftServer = MinecraftServer.init(config.createAuth())
-    val pluginCatalog = PluginCatalog(MinestomPluginLoader.discover())
 
+    MinecraftServer.LOGGER.info("Discovering server plugins.")
+    val pluginCatalog = PluginCatalog(MinestomPluginLoader.discover())
+    MinecraftServer.LOGGER.info(
+        "Discovered {} server plugin(s).",
+        pluginCatalog.plugins.size,
+    )
+
+    MinecraftServer.LOGGER.info("Creating dependency injector.")
     val modules = buildList<Module> {
         add(
             LobbyServerModule(

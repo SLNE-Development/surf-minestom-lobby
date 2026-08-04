@@ -6,6 +6,7 @@ import dev.slne.minestom.lobby.api.command.CommandRegistrar
 import dev.slne.minestom.lobby.api.extension.addListener
 import dev.slne.minestom.lobby.api.instance.LobbyInstance
 import dev.slne.minestom.lobby.server.config.ServerConfig
+import dev.slne.minestom.lobby.server.console.LobbyTerminalConsole
 import dev.slne.minestom.lobby.server.luckperms.LuckPermsService
 import net.minestom.server.event.Event
 import net.minestom.server.event.EventNode
