@@ -11,11 +11,14 @@ import dev.slne.minestom.lobby.server.plugin.MinestomPluginLoader
 import dev.slne.minestom.lobby.server.plugin.PluginCatalog
 import kotlinx.coroutines.runBlocking
 import net.minestom.server.MinecraftServer
+import net.minestom.server.tag.Tag
 import kotlin.io.path.Path
 
 fun main() {
     MinecraftServer.LOGGER.info("Loading server configuration.")
     val config = ServerConfigLoader(Path("config.yml")).load()
+
+    Tag
 
     MinecraftServer.LOGGER.info(
         "Initializing Minestom server for {}:{}.",
