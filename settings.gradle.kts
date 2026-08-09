@@ -10,6 +10,7 @@ pluginManagement {
 dependencyResolutionManagement {
     repositories {
         mavenCentral()
+        maven("https://repo.lucko.me/")
     }
 }
 
@@ -32,5 +33,11 @@ if (!luckPermsDir.resolve("settings.gradle").isFile) {
 includeBuild(luckPermsDir) {
     dependencySubstitution {
         substitute(module("club.tesseract:luckperms-minestom")).using(project(":minestom"))
+    }
+}
+
+includeBuild("vendor/spark-minestom") {
+    dependencySubstitution {
+        substitute(module("me.lucko:spark-minestom")).using(project(":"))
     }
 }

@@ -1,5 +1,4 @@
 import com.github.jengelman.gradle.plugins.shadow.transformers.Log4j2PluginsCacheFileTransformer
-import sun.jvmstat.monitor.MonitoredVmUtil.mainClass
 
 plugins {
     application
@@ -9,6 +8,7 @@ plugins {
 
 repositories {
     mavenCentral()
+    maven("https://repo.lucko.me/")
 //    maven("https://repo.hypera.dev/snapshots/")
 }
 
@@ -26,6 +26,7 @@ dependencies {
     implementation(libs.configurate.yaml)
     implementation(libs.configurate.kotlin)
     implementation(libs.luckperms.minestom)
+    implementation(libs.spark.minestom)
 
 
 //    runtimeOnly(libs.surf.api.minestom)
@@ -56,7 +57,8 @@ tasks.shadowJar {
 
     manifest {
         attributes["Main-Class"] = "dev.slne.minestom.lobby.MainKt"
-        attributes["Launcher-Agent-Class"] = "me.lucko.luckperms.minestom.dependencies.LuckPermsAgent"
+        attributes["Launcher-Agent-Class"] =
+            "me.lucko.luckperms.minestom.dependencies.LuckPermsAgent"
         attributes["Multi-Release"] = "true"
     }
 }

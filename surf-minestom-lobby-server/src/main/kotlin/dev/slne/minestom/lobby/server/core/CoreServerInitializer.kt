@@ -8,6 +8,7 @@ import dev.slne.minestom.lobby.server.permission.PermissionLevelService
 import dev.slne.minestom.lobby.server.player.LobbyPlayerService
 import dev.slne.minestom.lobby.server.player.chat.ChatService
 import dev.slne.minestom.lobby.server.player.handler.LobbyPlayerHandler
+import dev.slne.minestom.lobby.server.spark.SparkService
 import net.minestom.server.event.Event
 import net.minestom.server.event.EventNode
 import net.minestom.server.event.GlobalEventHandler
@@ -23,6 +24,7 @@ class CoreServerInitializer @Inject constructor(
     private val permissionLevelService: PermissionLevelService,
     private val lobbyPlayerHandler: LobbyPlayerHandler,
     private val chatService: ChatService,
+    private val sparkService: SparkService
 ) {
     private val initialized = AtomicBoolean()
 
@@ -33,6 +35,7 @@ class CoreServerInitializer @Inject constructor(
             "Core server has already been initialized"
         }
 
+        sparkService.init()
         lobbyPlayerService.registerPlayerProvider()
         commandService.register()
         registerEvents()
@@ -43,6 +46,7 @@ class CoreServerInitializer @Inject constructor(
             return
         }
 
+        sparkService.close()
         globalEventHandler.removeChild(eventNode)
         luckperms.close()
     }
