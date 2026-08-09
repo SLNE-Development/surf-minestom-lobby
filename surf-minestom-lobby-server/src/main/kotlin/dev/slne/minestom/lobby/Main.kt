@@ -17,7 +17,6 @@ import kotlin.io.path.Path
 
 val bootstrapLogger = ComponentLogger.logger("Bootstrap")
 
-
 fun main() {
     val startupStartedAt = System.nanoTime()
 
