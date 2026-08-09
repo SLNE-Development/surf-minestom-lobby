@@ -10,17 +10,21 @@ import dev.slne.minestom.lobby.server.di.LobbyServerModule
 import dev.slne.minestom.lobby.server.plugin.MinestomPluginLoader
 import dev.slne.minestom.lobby.server.plugin.PluginCatalog
 import kotlinx.coroutines.runBlocking
+import net.kyori.adventure.text.logger.slf4j.ComponentLogger
 import net.minestom.server.MinecraftServer
-import net.minestom.server.tag.Tag
 import kotlin.io.path.Path
 
+
+val bootstrapLogger = ComponentLogger.logger("Bootstrap")
+
+
 fun main() {
-    MinecraftServer.LOGGER.info("Loading server configuration.")
+    val startupStartedAt = System.nanoTime()
+
+    bootstrapLogger.info("Loading server configuration.")
     val config = ServerConfigLoader(Path("config.yml")).load()
 
-    Tag
-
-    MinecraftServer.LOGGER.info(
+    bootstrapLogger.info(
         "Initializing Minestom server for {}:{}.",
         config.address.host,
         config.address.port,
@@ -50,6 +54,6 @@ fun main() {
     val injector = Guice.createInjector(Stage.PRODUCTION, *modules.toTypedArray())
 
     runBlocking {
-        injector.getInstance(LobbyServerApplication::class.java).start()
+        injector.getInstance(LobbyServerApplication::class.java).start(startupStartedAt)
     }
 }

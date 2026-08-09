@@ -24,15 +24,15 @@
 
       <PatternLayout>
         <LoggerNamePatternSelector
-          defaultPattern="[%d{HH:mm:ss}] [%t/%level]: [%logger] %stripAnsi{%msg}%n%xEx{full}">
+          defaultPattern="[%d{HH:mm:ss}] [%t/%level]: [%logger] %minecraftFormatting{%msg}{strip}%n%xEx{full}">
 
           <PatternMatch
             key="net.minestom"
-            pattern="[%d{HH:mm:ss}] [%t/%level]: %stripAnsi{%msg}%n%xEx{full}"/>
+            pattern="[%d{HH:mm:ss}] [%t/%level]: %minecraftFormatting{%msg}{strip}%n%xEx{full}"/>
 
           <PatternMatch
             key="com.mojang"
-            pattern="[%d{HH:mm:ss}] [%t/%level]: %stripAnsi{%msg}%n%xEx{full}"/>
+            pattern="[%d{HH:mm:ss}] [%t/%level]: %minecraftFormatting{%msg}{strip}%n%xEx{full}"/>
         </LoggerNamePatternSelector>
       </PatternLayout>
 

@@ -1,16 +1,17 @@
 package dev.slne.minestom.lobby.api.coroutine
 
 import kotlinx.coroutines.*
-import net.minestom.server.MinecraftServer
+import net.minestom.server.ServerProcess
 import net.minestom.server.thread.Acquirable
 import net.minestom.server.thread.AcquirableCollection
+import net.minestom.server.thread.AcquirableSource
 import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
 val Int.ticks: Duration get() = (this * 50L - 25).milliseconds
 
-fun MinecraftServer.launch(
+fun ServerProcess.launch(
     context: CoroutineContext = MinestomDispatchers.Main,
     start: CoroutineStart = CoroutineStart.DEFAULT,
     block: suspend CoroutineScope.() -> Unit
@@ -21,6 +22,9 @@ fun MinecraftServer.launch(
 
     return minestomScope.launch(context, start, block)
 }
+
+suspend fun <T, R> AcquirableSource<T>.asyncSuspend(block: (T) -> R): R =
+    acquirable().asyncSuspend(block)
 
 suspend fun <T, R> Acquirable<T>.asyncSuspend(block: (T) -> R): R {
     val acquire = this

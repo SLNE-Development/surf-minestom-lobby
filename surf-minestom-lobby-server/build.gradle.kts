@@ -17,9 +17,11 @@ dependencies {
 
     implementation(libs.minestom)
     implementation(libs.guice)
+    implementation(libs.guice.assistedinject)
     implementation(libs.coroutines.core)
     implementation(libs.bundles.log4j)
     implementation(libs.terminal.console.appender)
+    implementation(libs.fastutil)
 
     implementation(libs.configurate.yaml)
     implementation(libs.configurate.kotlin)
@@ -37,6 +39,9 @@ dependencies {
 
 kotlin {
     jvmToolchain(25)
+    compilerOptions {
+        javaParameters = true
+    }
 }
 
 application {

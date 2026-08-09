@@ -7,8 +7,10 @@ plugins {
 dependencies {
     compileOnlyApi(libs.minestom)
     compileOnlyApi(libs.guice)
+    compileOnlyApi(libs.guice.assistedinject)
     compileOnlyApi(libs.coroutines.core)
     compileOnlyApi(libs.bundles.log4j)
+    compileOnlyApi(libs.fastutil)
 
     api(libs.bundles.lamp)
 }

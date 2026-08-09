@@ -5,9 +5,14 @@ import kotlinx.coroutines.*
 import net.minestom.server.timer.Task
 import net.minestom.server.timer.TaskSchedule
 import java.lang.Runnable
+import java.util.concurrent.Executors
 import kotlin.coroutines.CoroutineContext
 
 object MinestomDispatchers {
+
+    val Blocking: CoroutineDispatcher = Executors.newThreadPerTaskExecutor(
+        Thread.ofVirtual().name("surf-blocking-", 0).factory()
+    ).asCoroutineDispatcher()
 
     @OptIn(InternalCoroutinesApi::class, ExperimentalCoroutinesApi::class)
     val Main: CoroutineDispatcher = object : CoroutineDispatcher(), Delay {

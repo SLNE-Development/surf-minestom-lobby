@@ -2,14 +2,25 @@ package dev.slne.minestom.lobby.server
 
 import com.google.inject.Inject
 import com.google.inject.Singleton
+import dev.slne.minestom.lobby.api.chat.AsyncChatEvent
+import dev.slne.minestom.lobby.api.chat.ChatRenderer
 import dev.slne.minestom.lobby.server.config.ServerConfig
 import dev.slne.minestom.lobby.server.console.LobbyTerminalConsole
 import dev.slne.minestom.lobby.server.core.CoreServerInitializer
 import dev.slne.minestom.lobby.server.plugin.MinestomPluginManager
 import kotlinx.coroutines.runBlocking
+import net.kyori.adventure.text.Component.text
+import net.kyori.adventure.text.event.ClickEvent
+import net.kyori.adventure.text.format.NamedTextColor
 import net.minestom.server.MinecraftServer
 import net.minestom.server.MinecraftServer.LOGGER
+import net.minestom.server.adventure.audience.Audiences
+import org.jetbrains.annotations.Blocking
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.concurrent.thread
+import kotlin.system.exitProcess
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.nanoseconds
 
 @Singleton
 class LobbyServerApplication @Inject constructor(
@@ -23,12 +34,10 @@ class LobbyServerApplication @Inject constructor(
 
     private var consoleThread: Thread? = null
 
-    suspend fun start() {
+    suspend fun start(startupStartedAt: Long) {
         check(started.compareAndSet(false, true)) {
             "Lobby server has already been started"
         }
-
-        val startupStartedAt = System.nanoTime()
 
         try {
             LOGGER.info("Initializing core server components.")
@@ -38,6 +47,24 @@ class LobbyServerApplication @Inject constructor(
             LOGGER.info("Starting server plugins.")
             pluginManager.startAll()
             LOGGER.info("Server plugins started.")
+
+            AsyncChatEvent.addListener { event ->
+                val signedMessage = event.signedMessage
+                event.renderer = ChatRenderer { source, sourceDisplayName, message, viewer ->
+                    text()
+                        .append(
+                            text()
+                                .append(text("[X] ", NamedTextColor.RED))
+                                .clickEvent(ClickEvent.callback {
+                                    Audiences.players().deleteMessage(signedMessage)
+                                })
+                        )
+                        .append(sourceDisplayName)
+                        .append(text(": ", NamedTextColor.GRAY))
+                        .append(message)
+                        .build()
+                }
+            }
 
             installShutdownHook()
 
@@ -50,11 +77,12 @@ class LobbyServerApplication @Inject constructor(
 
             startConsole()
 
-            val startupDurationMs = (System.nanoTime() - startupStartedAt) / 1_000_000
+            val startupDuration =
+                (System.nanoTime() - startupStartedAt).nanoseconds.inWholeMilliseconds.milliseconds
 
             LOGGER.info(
-                "Surf Minestom Lobby is ready in {} ms.",
-                startupDurationMs,
+                "Surf Minestom Lobby is ready in {}.",
+                startupDuration,
             )
         } catch (startupFailure: Throwable) {
             LOGGER.error(
@@ -90,16 +118,7 @@ class LobbyServerApplication @Inject constructor(
 
     private fun startConsole() {
         val console = LobbyTerminalConsole {
-            runBlocking {
-                runCatching {
-                    stop()
-                }.onFailure {
-                    LOGGER.error(
-                        "Failed to stop Surf Minestom Lobby from console.",
-                        it,
-                    )
-                }
-            }
+            shutdownAndExit("console")
         }
 
         consoleThread = Thread(
@@ -109,6 +128,30 @@ class LobbyServerApplication @Inject constructor(
             isDaemon = true
             start()
         }
+    }
+
+    fun beginShutdown() {
+        if (stopped.get()) return
+        thread(isDaemon = false, name = "shutdown-thread") {
+            shutdownAndExit("command")
+        }
+    }
+
+    @Blocking
+    private fun shutdownAndExit(source: String) {
+        runBlocking {
+            runCatching {
+                stop()
+            }.onFailure {
+                LOGGER.error(
+                    "Failed to stop Surf Minestom Lobby from {}.",
+                    source,
+                    it,
+                )
+            }
+        }
+
+        exitProcess(0)
     }
 
     suspend fun stop() {
@@ -137,7 +180,7 @@ class LobbyServerApplication @Inject constructor(
             pluginManager.stopAll()
             LOGGER.info("Server plugins stopped.")
         } catch (currentFailure: Throwable) {
-            LOGGER.error("Failed to stop server plugins.", currentFailure,)
+            LOGGER.error("Failed to stop server plugins.", currentFailure)
 
             if (failure == null) {
                 failure = currentFailure
@@ -151,7 +194,7 @@ class LobbyServerApplication @Inject constructor(
             coreServerInitializer.shutdown()
             LOGGER.info("Core server components shut down.")
         } catch (currentFailure: Throwable) {
-            LOGGER.error("Failed to shut down core server components.", currentFailure,)
+            LOGGER.error("Failed to shut down core server components.", currentFailure)
 
             if (failure == null) {
                 failure = currentFailure

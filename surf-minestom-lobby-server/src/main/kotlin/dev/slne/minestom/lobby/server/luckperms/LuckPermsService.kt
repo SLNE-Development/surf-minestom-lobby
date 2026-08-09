@@ -5,7 +5,9 @@ import com.google.inject.Singleton
 import dev.slne.minestom.lobby.server.luckperms.config.LuckpermsConfigAdapter
 import me.lucko.luckperms.minestom.CommandRegistry
 import me.lucko.luckperms.minestom.LuckPermsMinestom
+import net.luckperms.api.model.user.User
 import java.lang.AutoCloseable
+import java.util.UUID
 import kotlin.io.path.Path
 import kotlin.io.path.div
 
@@ -21,5 +23,14 @@ class LuckPermsService @Inject constructor() : AutoCloseable {
         .enable()
 
     override fun close() {
+    }
+
+    fun hasPermission(uuid: UUID, permission: String): Boolean {
+        val user = getLoadedUser(uuid) ?: return false
+        return user.cachedData.permissionData.checkPermission(permission).asBoolean()
+    }
+
+    fun getLoadedUser(uuid: UUID): User? {
+        return luckPerms.userManager.getUser(uuid)
     }
 }

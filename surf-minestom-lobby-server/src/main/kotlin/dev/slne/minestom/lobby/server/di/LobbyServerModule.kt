@@ -3,14 +3,19 @@ package dev.slne.minestom.lobby.server.di
 import com.google.inject.AbstractModule
 import com.google.inject.Provides
 import com.google.inject.Singleton
+import com.google.inject.assistedinject.FactoryModuleBuilder
 import com.google.inject.multibindings.Multibinder
 import dev.slne.minestom.lobby.api.command.CommandRegistrar
 import dev.slne.minestom.lobby.api.instance.LobbyInstance
+import dev.slne.minestom.lobby.api.player.LobbyPlayer
 import dev.slne.minestom.lobby.server.LobbyServerApplication
 import dev.slne.minestom.lobby.server.command.DefaultCommandRegistrar
 import dev.slne.minestom.lobby.server.config.ServerConfig
 import dev.slne.minestom.lobby.server.core.CoreServerInitializer
 import dev.slne.minestom.lobby.server.luckperms.LuckPermsService
+import dev.slne.minestom.lobby.server.player.LobbyPlayerFactory
+import dev.slne.minestom.lobby.server.player.LobbyPlayerImpl
+import dev.slne.minestom.lobby.server.player.LobbyPlayerService
 import dev.slne.minestom.lobby.server.plugin.MinestomPluginManager
 import dev.slne.minestom.lobby.server.plugin.PluginCatalog
 import dev.slne.minestom.lobby.server.world.LobbyWorldFactory
@@ -35,11 +40,11 @@ class LobbyServerModule(
             .addBinding()
             .to(DefaultCommandRegistrar::class.java)
 
-        bind(LobbyServerApplication::class.java).`in`(Singleton::class.java)
-        bind(CoreServerInitializer::class.java).`in`(Singleton::class.java)
-        bind(MinestomPluginManager::class.java).`in`(Singleton::class.java)
-
-        bind(LuckPermsService::class.java).`in`(Singleton::class.java)
+        install(
+            FactoryModuleBuilder()
+                .implement(LobbyPlayer::class.java, LobbyPlayerImpl::class.java)
+                .build(LobbyPlayerFactory::class.java)
+        )
     }
 
     @Provides

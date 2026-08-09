@@ -63,7 +63,7 @@ import net.minestom.server.timer.SchedulerManager
 import net.minestom.server.world.DimensionType
 import net.minestom.server.world.biome.Biome
 
-val server get() = MinecraftServer.getServer() ?: error("Server is not initialized yet. Please make sure to call this after the server has started.")
+val server get() = MinecraftServer.process() ?: error("Server is not initialized yet. Please make sure to call this after the server has started.")
 
 inline val GlobalEventHandler: GlobalEventHandler get() = getGlobalEventHandler()
 inline val PacketListenerManager: PacketListenerManager get() = getPacketListenerManager()

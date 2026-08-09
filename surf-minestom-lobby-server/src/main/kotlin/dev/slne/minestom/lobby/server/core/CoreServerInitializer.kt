@@ -2,30 +2,27 @@ package dev.slne.minestom.lobby.server.core
 
 import com.google.inject.Inject
 import com.google.inject.Singleton
-import dev.slne.minestom.lobby.api.command.CommandRegistrar
-import dev.slne.minestom.lobby.api.extension.addListener
-import dev.slne.minestom.lobby.api.instance.LobbyInstance
-import dev.slne.minestom.lobby.server.config.ServerConfig
-import dev.slne.minestom.lobby.server.console.LobbyTerminalConsole
+import dev.slne.minestom.lobby.server.command.CommandService
 import dev.slne.minestom.lobby.server.luckperms.LuckPermsService
+import dev.slne.minestom.lobby.server.permission.PermissionLevelService
+import dev.slne.minestom.lobby.server.player.LobbyPlayerService
+import dev.slne.minestom.lobby.server.player.chat.ChatService
+import dev.slne.minestom.lobby.server.player.handler.LobbyPlayerHandler
 import net.minestom.server.event.Event
 import net.minestom.server.event.EventNode
 import net.minestom.server.event.GlobalEventHandler
-import net.minestom.server.event.player.AsyncPlayerConfigurationEvent
-import net.minestom.server.instance.InstanceContainer
-import revxrsal.commands.minestom.MinestomLamp
 import java.util.concurrent.atomic.AtomicBoolean
 
 @Singleton
 class CoreServerInitializer @Inject constructor(
-    private val config: ServerConfig,
     private val globalEventHandler: GlobalEventHandler,
 
-    @LobbyInstance
-    private val lobbyInstance: InstanceContainer,
-    private val commands: Set<@JvmSuppressWildcards CommandRegistrar>,
-
-    private val luckperms: LuckPermsService
+    private val luckperms: LuckPermsService,
+    private val lobbyPlayerService: LobbyPlayerService,
+    private val commandService: CommandService,
+    private val permissionLevelService: PermissionLevelService,
+    private val lobbyPlayerHandler: LobbyPlayerHandler,
+    private val chatService: ChatService,
 ) {
     private val initialized = AtomicBoolean()
 
@@ -36,7 +33,8 @@ class CoreServerInitializer @Inject constructor(
             "Core server has already been initialized"
         }
 
-        registerCommands()
+        lobbyPlayerService.registerPlayerProvider()
+        commandService.register()
         registerEvents()
     }
 
@@ -50,22 +48,10 @@ class CoreServerInitializer @Inject constructor(
     }
 
     private fun registerEvents() {
-
-        eventNode.addListener<AsyncPlayerConfigurationEvent> { event ->
-            event.spawningInstance = lobbyInstance
-            event.player.respawnPoint = config.spawn.toPos()
-        }
+        permissionLevelService.initialize(eventNode)
+        lobbyPlayerHandler.initialize(eventNode)
+        chatService.initialize(eventNode)
 
         globalEventHandler.addChild(eventNode)
-    }
-
-    private fun registerCommands() {
-        val lamp = MinestomLamp.builder().build()
-
-        lamp.register()
-
-        for (registrar in commands) {
-            registrar.register(lamp)
-        }
     }
 }
