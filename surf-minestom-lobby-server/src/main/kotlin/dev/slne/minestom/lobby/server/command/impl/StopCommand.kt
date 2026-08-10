@@ -1,6 +1,7 @@
 package dev.slne.minestom.lobby.server.command.impl
 
 import com.google.inject.Inject
+import com.google.inject.Provider
 import dev.slne.minestom.lobby.api.command.CommandPermission
 import dev.slne.minestom.lobby.server.lifecycle.LobbyServerApplication
 import dev.slne.minestom.lobby.server.permission.LobbyPermissions
@@ -13,13 +14,13 @@ import revxrsal.commands.minestom.actor.MinestomCommandActor
 @Command("stop")
 @CommandPermission(LobbyPermissions.STOP_COMMAND)
 class StopCommand @Inject constructor(
-    private val lobbyServerApplication: LobbyServerApplication
+    private val lobbyServerApplication: Provider<LobbyServerApplication>,
 ) {
 
     @CommandPlaceholder
     fun stop(actor: MinestomCommandActor) {
         actor.reply(text("Der Server wird heruntergefahren...", NamedTextColor.GRAY))
 
-        lobbyServerApplication.beginShutdown()
+        lobbyServerApplication.get().beginShutdown()
     }
 }
