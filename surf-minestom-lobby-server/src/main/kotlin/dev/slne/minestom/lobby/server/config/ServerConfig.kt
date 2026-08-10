@@ -1,12 +1,10 @@
 package dev.slne.minestom.lobby.server.config
 
-import dev.slne.minestom.lobby.bootstrapLogger
-import dev.slne.minestom.lobby.server.config.contraints.NonBlank
+import dev.slne.minestom.lobby.server.config.constraints.NonBlank
 import dev.slne.minestom.lobby.server.config.types.ConfigPosition
-import net.kyori.adventure.text.logger.slf4j.ComponentLogger.logger
+import net.minestom.server.entity.GameMode
 import org.spongepowered.configurate.objectmapping.ConfigSerializable
 import org.spongepowered.configurate.objectmapping.meta.Comment
-import org.spongepowered.configurate.objectmapping.meta.PostProcess
 import org.spongepowered.configurate.objectmapping.meta.Setting
 
 @ConfigSerializable
@@ -16,6 +14,7 @@ data class ServerConfig(
 
     @Setting("spawn")
     val spawn: ConfigPosition = ConfigPosition(),
+    val defaultGameMode: GameMode = GameMode.SURVIVAL,
 
     @Setting("velocity")
     val velocity: VelocityConfig = VelocityConfig(),
@@ -37,7 +36,6 @@ data class ServerConfig(
 ) {
     companion object {
         const val CURRENT_VERSION = 1
-        private const val DISPATCHER_THREADS_PROPERTY = "minestom.dispatcher-threads"
     }
 
     @ConfigSerializable
@@ -97,24 +95,20 @@ data class ServerConfig(
             """
         )
         val tickThreads: Int = 1,
+
+        @Setting("spark")
+        val spark: SparkConfig = SparkConfig(),
     )
 
-    @PostProcess
-    fun applyDispatcherThreads() {
-        val existing = System.getProperty(DISPATCHER_THREADS_PROPERTY)
-        if (existing != null) {
-            bootstrapLogger.info(
-                "Tick dispatcher threads pinned via -D{}={}; keeping it.",
-                DISPATCHER_THREADS_PROPERTY,
-                existing
-            )
-            return
-        }
-
-        val configured = performance.tickThreads
-        val threads = if (configured <= 0) Runtime.getRuntime().availableProcessors() else configured
-
-        System.setProperty(DISPATCHER_THREADS_PROPERTY, threads.toString())
-        bootstrapLogger.info("Using {} tick dispatcher thread(s).", threads)
-    }
+    @ConfigSerializable
+    data class SparkConfig(
+        @Setting("profile-on-startup")
+        @Comment(
+            """
+            Whether Spark should start profiling every thread as soon as the server boots.
+            Useful while tuning a server, but it keeps a sampler running for the whole uptime.
+            """
+        )
+        val profileOnStartup: Boolean = true,
+    )
 }

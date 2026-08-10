@@ -9,6 +9,7 @@ import dev.slne.minestom.lobby.server.command.args.GameModeArgument
 import dev.slne.minestom.lobby.server.command.params.GameModeParameterType
 import dev.slne.minestom.lobby.server.command.params.LobbyPlayerParameterType
 import dev.slne.minestom.lobby.server.command.permission.MinestomCommandPermissionFactory
+import dev.slne.minestom.lobby.server.lifecycle.LobbyService
 import net.minestom.server.command.builder.arguments.Argument
 import net.minestom.server.command.builder.arguments.ArgumentType
 import net.minestom.server.entity.GameMode
@@ -21,13 +22,12 @@ import revxrsal.commands.node.ParameterNode
 
 @Singleton
 class CommandService @Inject constructor(
-    private val commands: Set<@JvmSuppressWildcards CommandRegistrar>,
+    private val registrars: Set<@JvmSuppressWildcards CommandRegistrar>,
     private val lampPermissionFactory: MinestomCommandPermissionFactory,
+    private val lobbyPlayerParamType: LobbyPlayerParameterType,
+) : LobbyService {
 
-    private val lobbyPlayerParamType: LobbyPlayerParameterType
-) {
-
-    fun register() {
+    override suspend fun start() {
         val config = MinestomLampConfig.builder<MinestomCommandActor>()
             .actorFactory(ActorFactory.defaultFactory())
             .argumentTypes { types ->
@@ -44,7 +44,7 @@ class CommandService @Inject constructor(
             }
             .build()
 
-        for (registrar in commands) {
+        for (registrar in registrars) {
             registrar.register(lamp)
         }
     }

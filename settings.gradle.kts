@@ -11,6 +11,7 @@ dependencyResolutionManagement {
     repositories {
         mavenCentral()
         maven("https://repo.lucko.me/")
+        maven("https://reposilite.slne.dev/public") { name = "slne-repository-public" }
     }
 }
 

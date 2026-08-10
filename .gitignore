@@ -3,3 +3,6 @@ build/
 out/
 *.iml
 .idea/
+
+# Created when the server (or a test that boots one) runs from a project directory
+logs/

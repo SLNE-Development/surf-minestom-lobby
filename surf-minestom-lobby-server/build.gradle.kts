@@ -1,4 +1,5 @@
 import com.github.jengelman.gradle.plugins.shadow.transformers.Log4j2PluginsCacheFileTransformer
+import sun.jvmstat.monitor.MonitoredVmUtil.mainClass
 
 plugins {
     application
@@ -10,6 +11,7 @@ repositories {
     mavenCentral()
     maven("https://repo.lucko.me/")
 //    maven("https://repo.hypera.dev/snapshots/")
+    maven("https://reposilite.slne.dev/public") { name = "slne-repository-public" }
 }
 
 dependencies {
@@ -45,18 +47,24 @@ kotlin {
     }
 }
 
+val serverMainClass = "dev.slne.minestom.lobby.MainKt"
+
 application {
-    mainClass = "dev.slne.minestom.lobby.MainKt"
+    mainClass = serverMainClass
+}
+
+tasks.jar {
+    archiveClassifier = "thin"
 }
 
 tasks.shadowJar {
-    archiveClassifier.set("")
+    archiveClassifier = ""
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
     mergeServiceFiles()
     transform<Log4j2PluginsCacheFileTransformer>()
 
     manifest {
-        attributes["Main-Class"] = "dev.slne.minestom.lobby.MainKt"
+        attributes["Main-Class"] = serverMainClass
         attributes["Launcher-Agent-Class"] =
             "me.lucko.luckperms.minestom.dependencies.LuckPermsAgent"
         attributes["Multi-Release"] = "true"

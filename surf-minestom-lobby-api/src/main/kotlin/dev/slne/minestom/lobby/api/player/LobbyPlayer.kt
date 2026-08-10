@@ -6,7 +6,6 @@ import net.minestom.server.network.player.GameProfile
 import net.minestom.server.network.player.PlayerConnection
 import org.jetbrains.annotations.ApiStatus
 
-
 abstract class LobbyPlayer @ApiStatus.Internal protected constructor(
     playerConnection: PlayerConnection,
     gameProfile: GameProfile,

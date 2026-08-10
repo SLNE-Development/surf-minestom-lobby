@@ -4,10 +4,10 @@ import com.google.inject.assistedinject.Assisted
 import com.google.inject.assistedinject.AssistedInject
 import dev.slne.minestom.lobby.api.player.LobbyPlayer
 import dev.slne.minestom.lobby.server.config.ServerConfig
-import dev.slne.minestom.lobby.server.luckperms.LuckPermsService
+import dev.slne.minestom.lobby.server.integration.luckperms.LuckPermsService
 import dev.slne.minestom.lobby.server.packet.framed
 import dev.slne.minestom.lobby.server.packet.server.play.DeleteChatPacketModern
-import dev.slne.minestom.lobby.server.player.handler.PlayerChatHandler
+import dev.slne.minestom.lobby.server.chat.PlayerChatHandler
 import net.kyori.adventure.chat.SignedMessage
 import net.minestom.server.crypto.ChatSession
 import net.minestom.server.crypto.MessageSignature
@@ -19,11 +19,10 @@ class LobbyPlayerImpl @AssistedInject constructor(
     @Assisted playerConnection: PlayerConnection,
     @Assisted gameProfile: GameProfile,
     private val luckPermsService: LuckPermsService,
-    config: ServerConfig,
+    chatConfig: ServerConfig.ChatConfig,
 ) : LobbyPlayer(playerConnection, gameProfile) {
 
-
-    val chatHandler = PlayerChatHandler(this, config.chat)
+    val chatHandler = PlayerChatHandler(this, chatConfig)
 
     override fun hasPermission(permission: String): Boolean {
         return luckPermsService.hasPermission(uuid, permission)

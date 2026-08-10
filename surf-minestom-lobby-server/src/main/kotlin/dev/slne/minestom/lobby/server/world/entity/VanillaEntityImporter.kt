@@ -17,11 +17,6 @@ import net.minestom.server.entity.metadata.LivingEntityMeta
 import net.minestom.server.instance.Instance
 import java.util.concurrent.ConcurrentHashMap
 
-/**
- * Spawns the entities stored in a world's `entities/` region files into a Minestom instance.
- *
- * @see AnvilEntitySource for why they have to be read separately at all
- */
 object VanillaEntityImporter {
 
     private val LOGGER = ComponentLogger.logger()

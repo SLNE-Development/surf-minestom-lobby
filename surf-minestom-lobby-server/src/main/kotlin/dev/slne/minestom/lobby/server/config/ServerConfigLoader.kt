@@ -1,5 +1,6 @@
 package dev.slne.minestom.lobby.server.config
 
+import dev.slne.minestom.lobby.server.config.constraints.NonBlank
 import org.spongepowered.configurate.kotlin.dataClassFieldDiscoverer
 import org.spongepowered.configurate.kotlin.extensions.get
 import org.spongepowered.configurate.objectmapping.ObjectMapper
@@ -19,6 +20,7 @@ class ServerConfigLoader(private val path: Path) {
                 serializers.registerAnnotatedObjects(
                     ObjectMapper.factoryBuilder()
                         .addDiscoverer(dataClassFieldDiscoverer())
+                        .addConstraint(NonBlank::class.java, String::class.java, NonBlank.Factory)
                         .build()
                 )
             }
@@ -39,16 +41,11 @@ class ServerConfigLoader(private val path: Path) {
             ServerConfig()
         }
 
-        validate(config)
-
         if (!fileExisted || migrated) {
             root.set(config)
             loader.save(root)
         }
 
         return config
-    }
-
-    private fun validate(config: ServerConfig) {
     }
 }

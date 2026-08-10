@@ -2,7 +2,7 @@ package dev.slne.minestom.lobby.server.command.impl
 
 import com.google.inject.Inject
 import dev.slne.minestom.lobby.api.command.CommandPermission
-import dev.slne.minestom.lobby.server.LobbyServerApplication
+import dev.slne.minestom.lobby.server.lifecycle.LobbyServerApplication
 import dev.slne.minestom.lobby.server.permission.LobbyPermissions
 import net.kyori.adventure.text.Component.text
 import net.kyori.adventure.text.format.NamedTextColor
