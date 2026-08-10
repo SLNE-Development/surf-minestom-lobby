@@ -2,12 +2,12 @@ package dev.slne.minestom.lobby.server.command.impl
 
 import dev.slne.minestom.lobby.api.command.CommandPermission
 import dev.slne.minestom.lobby.api.command.entity.displayName
+import dev.slne.minestom.lobby.api.command.selector.EntityTargets
 import dev.slne.minestom.lobby.server.permission.LobbyPermissions
 import net.kyori.adventure.text.Component.text
 import net.kyori.adventure.text.format.NamedTextColor
 import net.minestom.server.entity.Entity
 import net.minestom.server.entity.LivingEntity
-import net.minestom.server.utils.entity.EntityFinder
 import revxrsal.commands.annotation.Command
 import revxrsal.commands.annotation.CommandPlaceholder
 import revxrsal.commands.minestom.actor.MinestomCommandActor
@@ -22,9 +22,8 @@ class KillCommand {
     }
 
     @CommandPlaceholder
-    fun target(actor: MinestomCommandActor, targets: EntityFinder)  {
-        val victims = targets.find(actor.sender())
-        kill(actor, victims)
+    fun target(actor: MinestomCommandActor, targets: EntityTargets)  {
+        kill(actor, targets)
     }
 
     private fun kill(actor: MinestomCommandActor, victims: List<Entity>) {

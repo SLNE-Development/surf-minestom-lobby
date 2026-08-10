@@ -5,6 +5,7 @@ plugins {
     application
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.shadow)
+    id("dev.slne.surf.api.gradle.minestom-relocations") version "+"
 }
 
 repositories {
@@ -31,9 +32,10 @@ dependencies {
     implementation(libs.spark.minestom)
 
 
-//    runtimeOnly(libs.surf.api.minestom)
-//    runtimeOnly(libs.surf.redis.minestom)
-//    runtimeOnly(libs.surf.rabbitmq.minestom)
+    runtimeOnly(libs.surf.api.minestom)
+    runtimeOnly(libs.surf.redis.minestom)
+    runtimeOnly(libs.surf.rabbitmq.minestom)
+    runtimeOnly(libs.surf.core.minestom)
 //    runtimeOnly(libs.surf.lobby.minestom)
 
     testImplementation(libs.minestom.testing)

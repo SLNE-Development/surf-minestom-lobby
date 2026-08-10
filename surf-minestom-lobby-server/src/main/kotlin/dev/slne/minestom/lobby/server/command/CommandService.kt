@@ -4,17 +4,21 @@ import com.google.inject.Inject
 import com.google.inject.Singleton
 import dev.slne.minestom.lobby.api.command.CommandRegistrar
 import dev.slne.minestom.lobby.api.command.args.LiteralEnum
+import dev.slne.minestom.lobby.api.command.selector.EntityTargets
+import dev.slne.minestom.lobby.api.command.selector.PlayerTargets
 import dev.slne.minestom.lobby.api.player.LobbyPlayer
 import dev.slne.minestom.lobby.server.command.args.GameModeArgument
+import dev.slne.minestom.lobby.server.command.args.TargetSelectorArgumentTypeFactory
 import dev.slne.minestom.lobby.server.command.params.GameModeParameterType
-import dev.slne.minestom.lobby.server.command.params.LobbyPlayerParameterType
 import dev.slne.minestom.lobby.server.command.permission.MinestomCommandPermissionFactory
 import dev.slne.minestom.lobby.server.lifecycle.LobbyService
 import net.minestom.server.command.builder.arguments.Argument
 import net.minestom.server.command.builder.arguments.ArgumentType
+import net.minestom.server.entity.Entity
 import net.minestom.server.entity.GameMode
 import revxrsal.commands.minestom.MinestomLamp
 import revxrsal.commands.minestom.MinestomLampConfig
+import revxrsal.commands.minestom.MinestomStubParameterType
 import revxrsal.commands.minestom.actor.ActorFactory
 import revxrsal.commands.minestom.actor.MinestomCommandActor
 import revxrsal.commands.minestom.argument.ArgumentTypeFactory
@@ -24,7 +28,6 @@ import revxrsal.commands.node.ParameterNode
 class CommandService @Inject constructor(
     private val registrars: Set<@JvmSuppressWildcards CommandRegistrar>,
     private val lampPermissionFactory: MinestomCommandPermissionFactory,
-    private val lobbyPlayerParamType: LobbyPlayerParameterType,
 ) : LobbyService {
 
     override suspend fun start() {
@@ -32,6 +35,7 @@ class CommandService @Inject constructor(
             .actorFactory(ActorFactory.defaultFactory())
             .argumentTypes { types ->
                 types.addType(GameMode::class.java) { node -> GameModeArgument(node.name()) }
+                types.addTypeFactory(TargetSelectorArgumentTypeFactory)
                 types.addTypeFactory(LiteralEnumFactory)
             }
             .build()
@@ -39,7 +43,22 @@ class CommandService @Inject constructor(
         val lamp = MinestomLamp.builder(config)
             .permissionFactory(lampPermissionFactory)
             .parameterTypes { builder ->
-                builder.addParameterType(LobbyPlayer::class.java, lobbyPlayerParamType)
+                builder.addParameterType(
+                    LobbyPlayer::class.java,
+                    MinestomStubParameterType.stubParameterType(),
+                )
+                builder.addParameterType(
+                    PlayerTargets::class.java,
+                    MinestomStubParameterType.stubParameterType(),
+                )
+                builder.addParameterType(
+                    EntityTargets::class.java,
+                    MinestomStubParameterType.stubParameterType(),
+                )
+                builder.addParameterType(
+                    Entity::class.java,
+                    MinestomStubParameterType.stubParameterType(),
+                )
                 builder.addParameterType(GameMode::class.java, GameModeParameterType())
             }
             .build()

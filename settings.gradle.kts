@@ -4,6 +4,7 @@ pluginManagement {
     repositories {
         gradlePluginPortal()
         mavenCentral()
+        maven("https://reposilite.slne.dev/releases")
     }
 }
 

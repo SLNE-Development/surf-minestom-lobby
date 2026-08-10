@@ -8,7 +8,6 @@ import dev.slne.minestom.lobby.server.permission.LobbyPermissions
 import net.kyori.adventure.text.Component.text
 import net.kyori.adventure.text.format.NamedTextColor
 import net.minestom.server.entity.GameMode
-import net.minestom.server.utils.entity.EntityFinder
 import revxrsal.commands.annotation.Command
 import revxrsal.commands.annotation.CommandPlaceholder
 import revxrsal.commands.minestom.actor.MinestomCommandActor
@@ -26,14 +25,9 @@ class GamemodeCommand {
     fun other(
         actor: MinestomCommandActor,
         gameMode: GameMode,
-        target: EntityFinder,
+        target: LobbyPlayer,
     ) {
-        val player = target.findFirstPlayer(actor.sender()) as? LobbyPlayer
-        if (player == null) {
-            actor.error(text("Es wurde kein passender Spieler gefunden.", NamedTextColor.RED))
-            return
-        }
-        applyGameMode(actor, gameMode, player)
+        applyGameMode(actor, gameMode, target)
     }
 
     private fun applyGameMode(
