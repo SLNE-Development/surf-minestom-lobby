@@ -1,7 +1,11 @@
 package dev.slne.minestom.lobby.api.plugin
 
 import com.google.inject.AbstractModule
+import dev.slne.minestom.lobby.api.command.CommandRegistrar
+import dev.slne.minestom.lobby.api.event.EventRegistrar
+import dev.slne.minestom.lobby.api.plugin.annotation.DataDirectory
 import dev.slne.minestom.lobby.api.plugin.annotation.MinestomPluginMeta
+import org.jetbrains.annotations.ApiStatus
 
 /**
  * A plugin as the server sees it: a Guice module plus the entrypoint that starts it.
@@ -10,19 +14,34 @@ import dev.slne.minestom.lobby.api.plugin.annotation.MinestomPluginMeta
  * `META-INF/services/dev.slne.minestom.lobby.api.plugin.MinestomPlugin` entry, a
  * [MinestomPluginMeta] annotation for its id and dependencies, and a no-argument constructor.
  *
- * Their modules are installed into the server's own injector, which means a plugin can inject
- * anything the server binds - and contribute to the server's own extension points.
+ * Each plugin is wired into its own private section of the server's injector. Everything the server
+ * binds stays injectable and keeps sharing the server's instances - services, the lobby world,
+ * Minestom's own types. What the plugin binds is its own: two plugins may bind the same key without
+ * colliding, and each one gets its own [DataDirectory] path.
  */
 abstract class MinestomPlugin(
     val entrypoint: Class<out MinestomPluginEntrypoint>
 ) : AbstractModule() {
     val meta = MinestomPluginMeta.get(javaClass)
 
+    private val declaredEventRegistrars = linkedSetOf<Class<out EventRegistrar>>()
+    private val declaredCommandRegistrars = linkedSetOf<Class<out CommandRegistrar>>()
+
+    @get:ApiStatus.Internal
+    val eventRegistrars: Set<Class<out EventRegistrar>>
+        get() = declaredEventRegistrars
+
+    @get:ApiStatus.Internal
+    val commandRegistrars: Set<Class<out CommandRegistrar>>
+        get() = declaredCommandRegistrars
+
     init {
         MinestomPluginMeta.validate(meta)
     }
 
     final override fun configure() {
+        bind(entrypoint)
+
         configurePlugin()
     }
 
@@ -32,16 +51,52 @@ abstract class MinestomPlugin(
      * ```
      * override fun configurePlugin() {
      *     bind(MyService::class.java).asEagerSingleton()
-     *     binder().bindEventRegistrar<MyListener>()
-     *     binder().bindCommandRegistrar<MyCommands>()
+     *     bindEventRegistrar<MyListener>()
+     *     bindCommandRegistrar<MyCommands>()
      * }
      * ```
      *
      * This method must not start services, open connections or register
      * listeners. Side effects belong in the entrypoint's start method.
      *
-     * @see dev.slne.minestom.lobby.api.di.bindEventRegistrar
-     * @see dev.slne.minestom.lobby.api.di.bindCommandRegistrar
+     * The entrypoint is already bound when this runs, so binding it again is an error.
      */
     protected open fun configurePlugin() = Unit
+
+    /**
+     * Registers [registrar] as an [EventRegistrar], so the server hands it its event node during
+     * startup.
+     */
+    protected fun bindEventRegistrar(registrar: Class<out EventRegistrar>) {
+        bind(registrar)
+        declaredEventRegistrars += registrar
+    }
+
+    /**
+     * Registers [T] as an [EventRegistrar], so the server hands it its event node during startup.
+     *
+     * ```
+     * bindEventRegistrar<WelcomeListener>()
+     * ```
+     */
+    protected inline fun <reified T : EventRegistrar> bindEventRegistrar() =
+        bindEventRegistrar(T::class.java)
+
+    /**
+     * Registers [registrar] as a [CommandRegistrar], so the server hands it Lamp during startup.
+     */
+    protected fun bindCommandRegistrar(registrar: Class<out CommandRegistrar>) {
+        bind(registrar)
+        declaredCommandRegistrars += registrar
+    }
+
+    /**
+     * Registers [T] as a [CommandRegistrar], so the server hands it Lamp during startup.
+     *
+     * ```
+     * bindCommandRegistrar<MyCommands>()
+     * ```
+     */
+    protected inline fun <reified T : CommandRegistrar> bindCommandRegistrar() =
+        bindCommandRegistrar(T::class.java)
 }

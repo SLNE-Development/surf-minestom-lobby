@@ -4,19 +4,24 @@ import com.google.inject.Guice
 import com.google.inject.Injector
 import com.google.inject.Module
 import com.google.inject.Stage
+import dev.slne.minestom.lobby.api.plugin.MinestomPlugin
 import dev.slne.minestom.lobby.server.config.ServerConfig
 import dev.slne.minestom.lobby.server.config.ServerConfigLoader
 import dev.slne.minestom.lobby.server.di.LobbyServerModule
 import dev.slne.minestom.lobby.server.lifecycle.LobbyServerApplication
 import dev.slne.minestom.lobby.server.plugin.MinestomPluginLoader
 import dev.slne.minestom.lobby.server.plugin.PluginCatalog
+import dev.slne.minestom.lobby.server.plugin.PluginModule
 import kotlinx.coroutines.runBlocking
 import net.minestom.server.MinecraftServer
+import java.nio.file.Path
 import kotlin.io.path.Path
+import kotlin.io.path.createDirectories
 
 object LobbyServerBootstrap {
 
     private val CONFIG_PATH = Path("config.yml")
+    private val PLUGINS_PATH = Path("plugins")
 
     fun run() {
         val startupStartedAt = System.nanoTime()
@@ -75,9 +80,14 @@ object LobbyServerBootstrap {
                 )
             )
 
-            addAll(pluginCatalog.plugins)
+            for (plugin in pluginCatalog.plugins) {
+                add(PluginModule(plugin, createDataDirectory(plugin)))
+            }
         }
 
         return Guice.createInjector(Stage.PRODUCTION, modules)
     }
+
+    private fun createDataDirectory(plugin: MinestomPlugin): Path =
+        PLUGINS_PATH.resolve(plugin.meta.id).createDirectories()
 }
