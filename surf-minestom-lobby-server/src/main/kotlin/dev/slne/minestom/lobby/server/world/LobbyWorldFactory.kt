@@ -7,7 +7,9 @@ import dev.slne.minestom.lobby.server.config.ServerConfig
 import dev.slne.minestom.lobby.server.world.block.LobbyBlockHandlers
 import dev.slne.minestom.lobby.server.world.entity.AnvilEntitySource
 import dev.slne.minestom.lobby.server.world.entity.VanillaEntityImporter
+import dev.slne.minestom.lobby.server.world.handler.EntityHandler
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger
+import net.minestom.server.MinecraftServer
 import net.minestom.server.instance.InstanceContainer
 import net.minestom.server.instance.LightingChunk
 import net.minestom.server.instance.anvil.AnvilLoader
@@ -18,6 +20,7 @@ import kotlin.io.path.exists
 
 class LobbyWorldFactory @Inject constructor(
     private val config: ServerConfig,
+    private val entityHandler: EntityHandler
 ) {
     companion object {
         private val LOGGER = ComponentLogger.logger()
@@ -25,6 +28,8 @@ class LobbyWorldFactory @Inject constructor(
 
     suspend fun create(): InstanceContainer {
         val path = Path("worlds/lobby")
+
+        entityHandler.initialize(MinecraftServer.getGlobalEventHandler())
 
         val instance = buildInstance {
             if (path.exists()) {

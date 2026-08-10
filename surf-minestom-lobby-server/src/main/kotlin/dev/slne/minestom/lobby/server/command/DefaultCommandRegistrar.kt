@@ -17,5 +17,6 @@ class DefaultCommandRegistrar @Inject constructor(
         lamp.register(KillCommand())
         lamp.register(ListPlayersCommand())
         lamp.register(stopCommand)
+        lamp.register(KickCommand())
     }
 }

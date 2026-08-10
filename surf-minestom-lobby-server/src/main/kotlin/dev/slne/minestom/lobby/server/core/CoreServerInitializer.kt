@@ -9,6 +9,7 @@ import dev.slne.minestom.lobby.server.player.LobbyPlayerService
 import dev.slne.minestom.lobby.server.player.chat.ChatService
 import dev.slne.minestom.lobby.server.player.handler.LobbyPlayerHandler
 import dev.slne.minestom.lobby.server.spark.SparkService
+import dev.slne.minestom.lobby.server.world.handler.EntityHandler
 import net.minestom.server.event.Event
 import net.minestom.server.event.EventNode
 import net.minestom.server.event.GlobalEventHandler
@@ -24,7 +25,8 @@ class CoreServerInitializer @Inject constructor(
     private val permissionLevelService: PermissionLevelService,
     private val lobbyPlayerHandler: LobbyPlayerHandler,
     private val chatService: ChatService,
-    private val sparkService: SparkService
+    private val sparkService: SparkService,
+    private val entityHandler: EntityHandler
 ) {
     private val initialized = AtomicBoolean()
 
@@ -55,6 +57,7 @@ class CoreServerInitializer @Inject constructor(
         permissionLevelService.initialize(eventNode)
         lobbyPlayerHandler.initialize(eventNode)
         chatService.initialize(eventNode)
+//        entityHandler.initialize(eventNode)
 
         globalEventHandler.addChild(eventNode)
     }
