@@ -16,6 +16,7 @@ import net.minestom.server.command.builder.arguments.Argument
 import net.minestom.server.command.builder.arguments.ArgumentType
 import net.minestom.server.entity.Entity
 import net.minestom.server.entity.GameMode
+import revxrsal.commands.LampBuilderVisitor
 import revxrsal.commands.minestom.MinestomLamp
 import revxrsal.commands.minestom.MinestomLampConfig
 import revxrsal.commands.minestom.MinestomStubParameterType
@@ -40,7 +41,7 @@ class CommandService @Inject constructor(
             }
             .build()
 
-        val lamp = MinestomLamp.builder(config)
+        val lampBuilder = MinestomLamp.builder(config)
             .permissionFactory(lampPermissionFactory)
             .parameterTypes { builder ->
                 builder.addParameterType(
@@ -61,7 +62,15 @@ class CommandService @Inject constructor(
                 )
                 builder.addParameterType(GameMode::class.java, GameModeParameterType())
             }
-            .build()
+
+        for (registrar in registrars) {
+            if (registrar is LampBuilderVisitor<*>) {
+                @Suppress("UNCHECKED_CAST")
+                lampBuilder.accept(registrar as LampBuilderVisitor<MinestomCommandActor>)
+            }
+        }
+
+        val lamp = lampBuilder.build()
 
         for (registrar in registrars) {
             registrar.register(lamp)
