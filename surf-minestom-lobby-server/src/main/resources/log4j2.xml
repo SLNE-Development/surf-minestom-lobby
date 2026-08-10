@@ -52,6 +52,14 @@
   </Appenders>
 
   <Loggers>
+    <!--
+      "Block ... does not have any corresponding handler, default to dummy." — one line per block
+      entity type in the lobby world. The dummy handler still reports the right namespace, so
+      saving is unaffected; it only withholds client-visible NBT, and LobbyBlockHandlers registers
+      real handlers for the block entities where that is actually visible.
+    -->
+    <Logger name="net.minestom.server.instance.block.BlockManager" level="error"/>
+
     <Root level="info">
       <Filters>
         <MarkerFilter

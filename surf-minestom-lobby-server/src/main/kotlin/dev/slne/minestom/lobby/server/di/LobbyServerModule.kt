@@ -19,6 +19,7 @@ import dev.slne.minestom.lobby.server.player.LobbyPlayerService
 import dev.slne.minestom.lobby.server.plugin.MinestomPluginManager
 import dev.slne.minestom.lobby.server.plugin.PluginCatalog
 import dev.slne.minestom.lobby.server.world.LobbyWorldFactory
+import kotlinx.coroutines.runBlocking
 import net.minestom.server.MinecraftServer
 import net.minestom.server.event.GlobalEventHandler
 import net.minestom.server.instance.InstanceContainer
@@ -65,6 +66,8 @@ class LobbyServerModule(
     @Singleton
     @LobbyInstance
     fun provideLobbyInstance(factory: LobbyWorldFactory): InstanceContainer {
-        return factory.create()
+        return runBlocking {
+            factory.create()
+        }
     }
 }
