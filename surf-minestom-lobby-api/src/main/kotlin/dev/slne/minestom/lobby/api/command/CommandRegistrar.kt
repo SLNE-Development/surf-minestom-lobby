@@ -9,6 +9,8 @@ import revxrsal.commands.minestom.actor.MinestomCommandActor
  *
  * Implement [LampBuilderVisitor] as well to contribute parameter types or other Lamp
  * configuration before this registrar receives the finished instance.
+ * Implement [MinestomLampConfigVisitor] when the contribution must happen at the native
+ * Minestom configuration layer, for example to register an argument type factory.
  */
 interface CommandRegistrar {
 

@@ -3,6 +3,7 @@ package dev.slne.minestom.lobby.server.command
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import dev.slne.minestom.lobby.api.command.CommandRegistrar
+import dev.slne.minestom.lobby.api.command.MinestomLampConfigVisitor
 import dev.slne.minestom.lobby.api.command.args.LiteralEnum
 import dev.slne.minestom.lobby.api.command.selector.EntityTargets
 import dev.slne.minestom.lobby.api.command.selector.PlayerTargets
@@ -32,14 +33,21 @@ class CommandService @Inject constructor(
 ) : LobbyService {
 
     override suspend fun start() {
-        val config = MinestomLampConfig.builder<MinestomCommandActor>()
+        val configBuilder = MinestomLampConfig.builder<MinestomCommandActor>()
             .actorFactory(ActorFactory.defaultFactory())
             .argumentTypes { types ->
                 types.addType(GameMode::class.java) { node -> GameModeArgument(node.name()) }
                 types.addTypeFactory(TargetSelectorArgumentTypeFactory)
                 types.addTypeFactory(LiteralEnumFactory)
             }
-            .build()
+
+        for (registrar in registrars) {
+            if (registrar is MinestomLampConfigVisitor) {
+                registrar.configure(configBuilder)
+            }
+        }
+
+        val config = configBuilder.build()
 
         val lampBuilder = MinestomLamp.builder(config)
             .permissionFactory(lampPermissionFactory)
