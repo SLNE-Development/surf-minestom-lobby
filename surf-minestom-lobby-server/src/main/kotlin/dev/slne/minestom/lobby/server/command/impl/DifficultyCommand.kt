@@ -1,33 +1,48 @@
 package dev.slne.minestom.lobby.server.command.impl
 
-import dev.slne.minestom.lobby.api.command.CommandPermission
-import dev.slne.minestom.lobby.api.command.args.LiteralEnum
+import dev.slne.minestom.lobby.api.command.commandapi.dsl.anyExecutor
+import dev.slne.minestom.lobby.api.command.commandapi.dsl.commandTree
+import dev.slne.minestom.lobby.api.command.commandapi.dsl.multiLiteralArgument
 import dev.slne.minestom.lobby.server.permission.LobbyPermissions
 import net.kyori.adventure.text.Component.text
 import net.kyori.adventure.text.format.NamedTextColor
 import net.minestom.server.MinecraftServer
 import net.minestom.server.world.Difficulty
-import revxrsal.commands.annotation.Command
-import revxrsal.commands.annotation.CommandPlaceholder
-import revxrsal.commands.minestom.actor.MinestomCommandActor
 
-@Command("difficulty")
-@CommandPermission(LobbyPermissions.DIFFICULTY_COMMAND)
-class DifficultyCommand {
 
-    @CommandPlaceholder
-    fun difficulty(actor: MinestomCommandActor, @LiteralEnum difficulty: Difficulty) {
-        MinecraftServer.setDifficulty(difficulty)
+fun difficultyCommand() = commandTree("difficulty") {
+    withPermission(LobbyPermissions.DIFFICULTY_COMMAND)
 
-        actor.reply(
-            text("Die Schwierigkeit wurde auf ", NamedTextColor.GRAY)
+    anyExecutor { sender, _ ->
+        val current = MinecraftServer.getDifficulty()
+        sender.sendMessage(
+            text("Die aktuelle Schwierigkeit ist ", NamedTextColor.GRAY)
                 .append(
                     text(
-                        difficulty.name.lowercase().replaceFirstChar { it.uppercase() },
+                        current.name.lowercase().replaceFirstChar { it.uppercase() },
                         NamedTextColor.GOLD
                     )
                 )
-                .append(text(" gesetzt.", NamedTextColor.GRAY))
         )
+    }
+
+    multiLiteralArgument(
+        "difficulty",
+        *Difficulty.entries.map { it.toString().lowercase() }.toTypedArray()
+    ) {
+        anyExecutor { sender, arguments ->
+            val difficulty = Difficulty.valueOf(arguments.get<String>("difficulty").uppercase())
+            MinecraftServer.setDifficulty(difficulty)
+            sender.sendMessage(
+                text("Die Schwierigkeit wurde auf ", NamedTextColor.GRAY)
+                    .append(
+                        text(
+                            difficulty.name.lowercase().replaceFirstChar { it.uppercase() },
+                            NamedTextColor.GOLD
+                        )
+                    )
+                    .append(text(" gesetzt.", NamedTextColor.GRAY))
+            )
+        }
     }
 }

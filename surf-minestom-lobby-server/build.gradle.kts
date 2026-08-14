@@ -1,5 +1,4 @@
 import com.github.jengelman.gradle.plugins.shadow.transformers.Log4j2PluginsCacheFileTransformer
-import sun.jvmstat.monitor.MonitoredVmUtil.mainClass
 
 plugins {
     application
@@ -26,6 +25,9 @@ dependencies {
     implementation(libs.terminal.console.appender)
     implementation(libs.fastutil)
 
+    implementation(libs.fabric.mixin)
+    annotationProcessor(libs.fabric.mixin)
+
     implementation(libs.configurate.yaml)
     implementation(libs.configurate.kotlin)
     implementation(libs.luckperms.minestom)
@@ -35,11 +37,13 @@ dependencies {
     runtimeOnly(libs.surf.api.minestom)
     runtimeOnly(libs.surf.redis.minestom)
     runtimeOnly(libs.surf.rabbitmq.minestom)
-    runtimeOnly(libs.surf.core.minestom)
+//    runtimeOnly(libs.surf.core.minestom)
+//    runtimeOnly(libs.surf.clan.minestom)
 //    runtimeOnly(libs.surf.lobby.minestom)
 
     testImplementation(libs.minestom.testing)
     testImplementation(libs.junit.jupiter)
+    testImplementation(libs.coroutines.test)
 }
 
 kotlin {
@@ -61,6 +65,7 @@ tasks.jar {
 
 tasks.shadowJar {
     archiveClassifier = ""
+    isZip64 = true
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
     mergeServiceFiles()
     transform<Log4j2PluginsCacheFileTransformer>()
@@ -68,8 +73,19 @@ tasks.shadowJar {
     manifest {
         attributes["Main-Class"] = serverMainClass
         attributes["Launcher-Agent-Class"] =
-            "me.lucko.luckperms.minestom.dependencies.LuckPermsAgent"
+            "dev.slne.minestom.lobby.server.instrumentation.LobbyAgent"
+
+        attributes["Can-Redefine-Classes"] = "true"
+        attributes["Can-Retransform-Classes"] = "true"
+
         attributes["Multi-Release"] = "true"
+
+        attributes(
+            mapOf(
+                "Implementation-Version" to libs.versions.asm.get()
+            ),
+            "org/objectweb/asm/"
+        )
     }
 }
 

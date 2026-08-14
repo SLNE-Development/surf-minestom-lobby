@@ -12,6 +12,7 @@ import dev.slne.minestom.lobby.server.command.args.GameModeArgument
 import dev.slne.minestom.lobby.server.command.args.TargetSelectorArgumentTypeFactory
 import dev.slne.minestom.lobby.server.command.params.GameModeParameterType
 import dev.slne.minestom.lobby.server.command.permission.MinestomCommandPermissionFactory
+import dev.slne.minestom.lobby.server.command.permission.MinestomRootCommandPermissionHook
 import dev.slne.minestom.lobby.server.lifecycle.LobbyService
 import net.minestom.server.command.builder.arguments.Argument
 import net.minestom.server.command.builder.arguments.ArgumentType
@@ -30,6 +31,7 @@ import revxrsal.commands.node.ParameterNode
 class CommandService @Inject constructor(
     private val registrars: Set<@JvmSuppressWildcards CommandRegistrar>,
     private val lampPermissionFactory: MinestomCommandPermissionFactory,
+    private val rootCommandPermissionHook: MinestomRootCommandPermissionHook,
 ) : LobbyService {
 
     override suspend fun start() {
@@ -77,6 +79,8 @@ class CommandService @Inject constructor(
                 lampBuilder.accept(registrar as LampBuilderVisitor<MinestomCommandActor>)
             }
         }
+
+        lampBuilder.hooks().onCommandRegistered(rootCommandPermissionHook)
 
         val lamp = lampBuilder.build()
 

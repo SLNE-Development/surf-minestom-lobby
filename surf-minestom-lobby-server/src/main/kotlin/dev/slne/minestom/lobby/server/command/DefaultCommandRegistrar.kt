@@ -10,7 +10,6 @@ import revxrsal.commands.minestom.actor.MinestomCommandActor
 @Singleton
 class DefaultCommandRegistrar @Inject constructor(
     private val gamemode: GamemodeCommand,
-    private val difficulty: DifficultyCommand,
     private val kill: KillCommand,
     private val list: ListPlayersCommand,
     private val stop: StopCommand,
@@ -18,6 +17,8 @@ class DefaultCommandRegistrar @Inject constructor(
 ) : CommandRegistrar {
 
     override fun register(lamp: Lamp<MinestomCommandActor>) {
-        lamp.register(gamemode, difficulty, kill, list, stop, kick)
+        lamp.register(gamemode, kill, list, stop, kick)
+
+        difficultyCommand()
     }
 }

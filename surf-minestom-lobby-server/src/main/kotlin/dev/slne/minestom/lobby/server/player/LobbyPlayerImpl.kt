@@ -48,6 +48,10 @@ class LobbyPlayerImpl @AssistedInject constructor(
             PlayerInfoUpdatePacket.Action.INITIALIZE_CHAT,
             super.getAddPlayerToList().entries().first().withChatSession(session)
         )
+
+    public override fun refreshAbilities() {
+        super.refreshAbilities()
+    }
 }
 
 private fun PlayerInfoUpdatePacket.Entry.withChatSession(session: ChatSession) =

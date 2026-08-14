@@ -36,6 +36,19 @@ class PrefixFilteredSuggestionProvider(
 }
 
 /**
+ * Returns distinct candidates whose start matches [typed], compared case-insensitively, up to
+ * [limit] results. This is the common filtering contract used by synchronous and cached providers.
+ */
+fun prefixFiltered(
+    candidates: Collection<String>,
+    typed: String,
+    limit: Int = Int.MAX_VALUE,
+): List<String> {
+    require(limit >= 0) { "limit must not be negative" }
+    return matchingSuggestions(candidates, typed, limit).toList()
+}
+
+/**
  * Returns only the [candidates] whose start matches [typed], compared case-insensitively.
  * A blank [typed] returns all candidates unchanged.
  */

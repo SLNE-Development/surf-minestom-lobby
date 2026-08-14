@@ -3,15 +3,25 @@ package dev.slne.minestom.lobby.server.player
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import dev.slne.minestom.lobby.api.event.EventRegistrar
+import dev.slne.minestom.lobby.api.extension.PacketListenerManager
 import dev.slne.minestom.lobby.api.extension.addListener
+import dev.slne.minestom.lobby.api.player.event.PlayerToggleFlightEvent
 import dev.slne.minestom.lobby.api.player.lobbyPlayer
+import dev.slne.minestom.lobby.api.player.requireLobbyPlayer
 import dev.slne.minestom.lobby.server.config.ServerConfig
 import dev.slne.minestom.lobby.server.permission.LobbyPermissions
+import dev.slne.minestom.lobby.server.util.setPlayListener
 import dev.slne.minestom.lobby.server.world.LobbyWorldService
+import net.minestom.server.entity.Player
 import net.minestom.server.event.Event
+import net.minestom.server.event.EventDispatcher
 import net.minestom.server.event.EventNode
 import net.minestom.server.event.player.AsyncPlayerConfigurationEvent
 import net.minestom.server.event.player.PlayerGameModeRequestEvent
+import net.minestom.server.listener.AbilitiesListener
+import net.minestom.server.network.packet.client.play.ClientPlayerAbilitiesPacket
+import net.minestom.server.network.packet.server.play.PlayerAbilitiesPacket
+import kotlin.experimental.and
 
 @Singleton
 class LobbyPlayerListener @Inject constructor(
@@ -23,6 +33,10 @@ class LobbyPlayerListener @Inject constructor(
         with(node) {
             addListener(::handlePlayerConfiguration)
             addListener(::handleGameModeRequest)
+        }
+
+        with(PacketListenerManager) {
+            setPlayListener(::handlePlayerAbilities)
         }
     }
 
@@ -39,5 +53,19 @@ class LobbyPlayerListener @Inject constructor(
         if (player.hasPermission(permission)) {
             player.gameMode = event.requestedGameMode
         }
+    }
+
+    private fun handlePlayerAbilities(packet: ClientPlayerAbilitiesPacket, player: Player) {
+        val isFlying = packet.flags and PlayerAbilitiesPacket.FLAG_FLYING != 0.toByte()
+        if (player.isAllowFlying && player.isFlying != isFlying) {
+            val event = PlayerToggleFlightEvent(player.requireLobbyPlayerImpl(), isFlying)
+            EventDispatcher.call(event)
+            if (event.isCancelled) {
+                player.refreshAbilities()
+                return
+            }
+        }
+
+        AbilitiesListener.listener(packet, player)
     }
 }

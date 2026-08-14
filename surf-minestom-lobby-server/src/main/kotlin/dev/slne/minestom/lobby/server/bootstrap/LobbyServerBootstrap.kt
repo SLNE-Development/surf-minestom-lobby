@@ -9,11 +9,13 @@ import dev.slne.minestom.lobby.server.config.ServerConfig
 import dev.slne.minestom.lobby.server.config.ServerConfigLoader
 import dev.slne.minestom.lobby.server.di.LobbyServerModule
 import dev.slne.minestom.lobby.server.lifecycle.LobbyServerApplication
+import dev.slne.minestom.lobby.server.performance.EntityTickFilter
 import dev.slne.minestom.lobby.server.plugin.MinestomPluginLoader
 import dev.slne.minestom.lobby.server.plugin.PluginCatalog
 import dev.slne.minestom.lobby.server.plugin.PluginModule
 import kotlinx.coroutines.runBlocking
 import net.minestom.server.MinecraftServer
+import net.minestom.server.entity.EntityType
 import java.nio.file.Path
 import kotlin.io.path.Path
 import kotlin.io.path.createDirectories
@@ -41,6 +43,15 @@ object LobbyServerBootstrap {
 
         return ServerConfigLoader(CONFIG_PATH).load().also { config ->
             config.performance.applyTickDispatcherThreads()
+
+            val disabledEntityTypes = config.performance
+                .nonTickingEntityTypes
+                .map { key ->
+                    EntityType.fromKey(key) ?: error("Unknown entity type: $key")
+                }
+                .toSet()
+
+            EntityTickFilter.configure(disabledEntityTypes)
         }
     }
 

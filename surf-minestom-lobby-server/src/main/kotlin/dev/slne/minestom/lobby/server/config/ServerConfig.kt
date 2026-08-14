@@ -2,6 +2,7 @@ package dev.slne.minestom.lobby.server.config
 
 import dev.slne.minestom.lobby.server.config.constraints.NonBlank
 import dev.slne.minestom.lobby.server.config.types.ConfigPosition
+import net.minestom.server.entity.EntityTypeKeys
 import net.minestom.server.entity.GameMode
 import org.spongepowered.configurate.objectmapping.ConfigSerializable
 import org.spongepowered.configurate.objectmapping.meta.Comment
@@ -95,6 +96,17 @@ data class ServerConfig(
             """
         )
         val tickThreads: Int = 1,
+
+        @Setting("non-ticking-entity-types")
+        @Comment(
+            """
+        Entity types whose Entity.tick(long) invocation is completely skipped.
+        These entities receive no normal Minestom entity tick processing.
+        """
+        )
+        val nonTickingEntityTypes: Set<String> = setOf(
+            EntityTypeKeys.ARMOR_STAND.key().asString()
+        ),
 
         @Setting("spark")
         val spark: SparkConfig = SparkConfig(),
