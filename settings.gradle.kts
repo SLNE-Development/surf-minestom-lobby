@@ -6,6 +6,9 @@ pluginManagement {
         mavenCentral()
         maven("https://reposilite.slne.dev/releases")
     }
+    plugins {
+        kotlin("kapt") version "2.4.10"
+    }
 }
 
 dependencyResolutionManagement {

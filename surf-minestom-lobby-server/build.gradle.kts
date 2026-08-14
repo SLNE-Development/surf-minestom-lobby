@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.shadow)
     id("dev.slne.surf.api.gradle.minestom-relocations") version "+"
+    kotlin("kapt")
 }
 
 repositories {
@@ -44,6 +45,7 @@ dependencies {
     testImplementation(libs.minestom.testing)
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.coroutines.test)
+    testImplementation(kotlin("test"))
 }
 
 kotlin {
