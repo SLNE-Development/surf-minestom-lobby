@@ -14,7 +14,7 @@ data class CustomArgumentInfo<B>(
     val baseValue: B,
 )
 
-class CustomArgument<T, B> internal constructor(
+open class CustomArgument<T, B> internal constructor(
     private val base: Argument<B>,
     private val formatter: (T) -> String,
     private val parser: (CustomArgumentInfo<B>) -> T,
