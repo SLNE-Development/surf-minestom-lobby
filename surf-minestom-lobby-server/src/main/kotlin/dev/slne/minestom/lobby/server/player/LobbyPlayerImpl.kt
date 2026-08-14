@@ -3,12 +3,17 @@ package dev.slne.minestom.lobby.server.player
 import com.google.inject.assistedinject.Assisted
 import com.google.inject.assistedinject.AssistedInject
 import dev.slne.minestom.lobby.api.player.LobbyPlayer
+import dev.slne.minestom.lobby.server.chat.PlayerChatHandler
 import dev.slne.minestom.lobby.server.config.ServerConfig
 import dev.slne.minestom.lobby.server.integration.luckperms.LuckPermsService
 import dev.slne.minestom.lobby.server.packet.framed
 import dev.slne.minestom.lobby.server.packet.server.play.DeleteChatPacketModern
-import dev.slne.minestom.lobby.server.chat.PlayerChatHandler
 import net.kyori.adventure.chat.SignedMessage
+import net.kyori.adventure.permission.PermissionChecker
+import net.kyori.adventure.pointer.Pointers
+import net.kyori.adventure.pointer.PointersSupplier
+import net.kyori.adventure.util.TriState
+import net.luckperms.api.util.Tristate
 import net.minestom.server.crypto.ChatSession
 import net.minestom.server.crypto.MessageSignature
 import net.minestom.server.network.packet.server.play.PlayerInfoUpdatePacket
@@ -22,10 +27,29 @@ class LobbyPlayerImpl @AssistedInject constructor(
     chatConfig: ServerConfig.ChatConfig,
 ) : LobbyPlayer(playerConnection, gameProfile) {
 
+    companion object {
+        private val POINTERS_SUPPLIER = PointersSupplier.builder<LobbyPlayerImpl>()
+            .parent(PLAYER_POINTERS_SUPPLIER)
+            .resolving(PermissionChecker.POINTER, LobbyPlayerImpl::permissionChecker)
+            .build()
+    }
+
     val chatHandler = PlayerChatHandler(this, chatConfig)
 
+    private val permissionChecker = PermissionChecker { permission ->
+        when (luckPermsService.hasPermission(uuid, permission)) {
+            Tristate.TRUE -> TriState.TRUE
+            Tristate.FALSE -> TriState.FALSE
+            Tristate.UNDEFINED -> TriState.NOT_SET
+        }
+    }
+
     override fun hasPermission(permission: String): Boolean {
-        return luckPermsService.hasPermission(uuid, permission)
+        return luckPermsService.hasPermission(uuid, permission).asBoolean()
+    }
+
+    override fun pointers(): Pointers {
+        return POINTERS_SUPPLIER.view(this)
     }
 
     override fun getAddPlayerToList(): PlayerInfoUpdatePacket {

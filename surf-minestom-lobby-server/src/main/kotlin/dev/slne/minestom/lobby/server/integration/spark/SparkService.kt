@@ -20,7 +20,7 @@ class SparkService @Inject constructor(
 
     override suspend fun start() {
         val spark = MinestomSparkPlugin(DATA_DIRECTORY) { sender, permission ->
-            sender !is Player || luckPerms.hasPermission(sender.uuid, permission)
+            sender !is Player || luckPerms.hasPermission(sender.uuid, permission).asBoolean()
         }
 
         spark.enable()

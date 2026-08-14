@@ -6,8 +6,10 @@ import dev.slne.minestom.lobby.server.integration.luckperms.config.LuckpermsConf
 import dev.slne.minestom.lobby.server.lifecycle.LobbyService
 import me.lucko.luckperms.minestom.CommandRegistry
 import me.lucko.luckperms.minestom.LuckPermsMinestom
+import net.kyori.adventure.util.TriState
 import net.luckperms.api.LuckPerms
 import net.luckperms.api.model.user.User
+import net.luckperms.api.util.Tristate
 import java.util.*
 import kotlin.io.path.Path
 import kotlin.io.path.div
@@ -38,9 +40,9 @@ class LuckPermsService @Inject constructor() : LobbyService {
         LuckPermsMinestom.disable()
     }
 
-    fun hasPermission(uuid: UUID, permission: String): Boolean {
-        val user = getLoadedUser(uuid) ?: return false
-        return user.cachedData.permissionData.checkPermission(permission).asBoolean()
+    fun hasPermission(uuid: UUID, permission: String): Tristate {
+        val user = getLoadedUser(uuid) ?: return Tristate.FALSE
+        return user.cachedData.permissionData.checkPermission(permission)
     }
 
     fun getLoadedUser(uuid: UUID): User? = luckPerms.userManager.getUser(uuid)
