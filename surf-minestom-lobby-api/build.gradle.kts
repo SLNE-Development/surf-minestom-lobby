@@ -11,8 +11,6 @@ dependencies {
     compileOnlyApi(libs.coroutines.core)
     compileOnlyApi(libs.bundles.log4j)
     compileOnlyApi(libs.fastutil)
-
-    api(libs.bundles.lamp)
 }
 
 kotlin {

@@ -1,52 +1,51 @@
 package dev.slne.minestom.lobby.server.command.impl
 
-import dev.slne.minestom.lobby.api.command.CommandPermission
+import dev.slne.minestom.lobby.api.command.commandapi.dsl.anyExecutor
+import dev.slne.minestom.lobby.api.command.commandapi.dsl.commandTree
+import dev.slne.minestom.lobby.api.command.commandapi.dsl.entitiesArgument
+import dev.slne.minestom.lobby.api.command.commandapi.dsl.playerExecutor
 import dev.slne.minestom.lobby.api.command.entity.displayName
-import dev.slne.minestom.lobby.api.command.selector.EntityTargets
 import dev.slne.minestom.lobby.server.permission.LobbyPermissions
 import net.kyori.adventure.text.Component.text
 import net.kyori.adventure.text.format.NamedTextColor
+import net.minestom.server.command.CommandSender
 import net.minestom.server.entity.Entity
 import net.minestom.server.entity.LivingEntity
-import revxrsal.commands.annotation.Command
-import revxrsal.commands.annotation.CommandPlaceholder
-import revxrsal.commands.minestom.actor.MinestomCommandActor
 
-@Command("kill")
-@CommandPermission(LobbyPermissions.KILL_COMMAND)
-class KillCommand {
+fun killCommand() = commandTree("kill") {
+    withPermission(LobbyPermissions.KILL_COMMAND)
 
-    @CommandPlaceholder
-    fun self(actor: MinestomCommandActor) {
-        kill(actor, listOf(actor.requirePlayer()))
+    playerExecutor { player, _ ->
+        kill(player, listOf(player))
     }
 
-    @CommandPlaceholder
-    fun target(actor: MinestomCommandActor, targets: EntityTargets)  {
-        kill(actor, targets)
+    entitiesArgument("targets") {
+        anyExecutor { sender, args ->
+            kill(sender, args.get("targets"))
+        }
+    }
+}
+
+private fun kill(sender: CommandSender, victims: List<Entity>) {
+    victims.forEach { victim ->
+        victim.scheduleNextTick { entity ->
+            if (entity is LivingEntity) entity.kill() else entity.remove()
+        }
     }
 
-    private fun kill(actor: MinestomCommandActor, victims: List<Entity>) {
-        victims.forEach { victim ->
-            victim.scheduleNextTick { entity ->
-                if (entity is LivingEntity) entity.kill() else entity.remove()
-            }
-        }
-
-        if (victims.size == 1) {
-            actor.sendRawMessage(
-                text()
-                    .append(victims.first().displayName.colorIfAbsent(NamedTextColor.GOLD))
-                    .appendSpace()
-                    .append(text("wurde getötet!", NamedTextColor.GRAY))
-            )
-        } else {
-            actor.sendRawMessage(
-                text()
-                    .append(text("${victims.size} Entitäten", NamedTextColor.GOLD))
-                    .appendSpace()
-                    .append(text("wurden getötet!", NamedTextColor.GRAY))
-            )
-        }
+    if (victims.size == 1) {
+        sender.sendMessage(
+            text()
+                .append(victims.first().displayName.colorIfAbsent(NamedTextColor.GOLD))
+                .appendSpace()
+                .append(text("wurde getötet!", NamedTextColor.GRAY))
+        )
+    } else {
+        sender.sendMessage(
+            text()
+                .append(text("${victims.size} Entitäten", NamedTextColor.GOLD))
+                .appendSpace()
+                .append(text("wurden getötet!", NamedTextColor.GRAY))
+        )
     }
 }

@@ -83,7 +83,8 @@ abstract class MinestomPlugin(
         bindEventRegistrar(T::class.java)
 
     /**
-     * Registers [registrar] as a [CommandRegistrar], so the server hands it Lamp during startup.
+     * Registers [registrar] as a [CommandRegistrar], so the server asks it to register its
+     * commands during startup.
      */
     protected fun bindCommandRegistrar(registrar: Class<out CommandRegistrar>) {
         bind(registrar)
@@ -91,7 +92,8 @@ abstract class MinestomPlugin(
     }
 
     /**
-     * Registers [T] as a [CommandRegistrar], so the server hands it Lamp during startup.
+     * Registers [T] as a [CommandRegistrar], so the server asks it to register its commands during
+     * startup.
      *
      * ```
      * bindCommandRegistrar<MyCommands>()

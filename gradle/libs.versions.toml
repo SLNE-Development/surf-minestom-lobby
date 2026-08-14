@@ -14,7 +14,6 @@ fastutil = "8.5.19"
 fabric-mixin = "0.17.3+mixin.0.8.7"
 asm = "9.10.1"
 
-lamp = "4.0.0-rc.18"
 luckperms-minestom = "5.5+26.2-SNAPSHOT" # substituted by the vendor/LuckPerms included build
 spark = "1.10.172-SNAPSHOT" # substituted by the vendor/spark-minestom included build
 
@@ -47,8 +46,6 @@ log4j-slf4j2-impl = { module = "org.apache.logging.log4j:log4j-slf4j2-impl", ver
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 terminal-console-appender = { module = "net.minecrell:terminalconsoleappender", version.ref = "terminal-console-appender" }
 
-lamp-common = { module = "io.github.revxrsal:lamp.common", version.ref = "lamp" }
-lamp-minestom = { module = "io.github.revxrsal:lamp.minestom", version.ref = "lamp" }
 luckperms-minestom = { module = "club.tesseract:luckperms-minestom", version.ref = "luckperms-minestom" }
 spark-common = { module = "me.lucko:spark-common", version.ref = "spark" }
 spark-minestom = { module = "me.lucko:spark-minestom", version.ref = "spark" }
@@ -59,4 +56,3 @@ shadow = { id = "com.gradleup.shadow", version.ref = "shadow" }
 
 [bundles]
 log4j = ["log4j-api", "log4j-core", "log4j-slf4j2-impl"]
-lamp = ["lamp-common", "lamp-minestom"]

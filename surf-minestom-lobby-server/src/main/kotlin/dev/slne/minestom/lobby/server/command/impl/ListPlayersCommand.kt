@@ -1,6 +1,7 @@
 package dev.slne.minestom.lobby.server.command.impl
 
-import dev.slne.minestom.lobby.api.command.CommandPermission
+import dev.slne.minestom.lobby.api.command.commandapi.dsl.anyExecutor
+import dev.slne.minestom.lobby.api.command.commandapi.dsl.commandAPICommand
 import dev.slne.minestom.lobby.api.extension.ConnectionManager
 import dev.slne.minestom.lobby.server.permission.LobbyPermissions
 import net.kyori.adventure.text.Component
@@ -8,16 +9,11 @@ import net.kyori.adventure.text.Component.text
 import net.kyori.adventure.text.JoinConfiguration
 import net.kyori.adventure.text.event.ClickEvent
 import net.kyori.adventure.text.format.NamedTextColor
-import revxrsal.commands.annotation.Command
-import revxrsal.commands.annotation.CommandPlaceholder
-import revxrsal.commands.minestom.actor.MinestomCommandActor
 
-@Command("list")
-@CommandPermission(LobbyPermissions.LIST_COMMAND)
-class ListPlayersCommand {
+fun listPlayersCommand() = commandAPICommand("list") {
+    withPermission(LobbyPermissions.LIST_COMMAND)
 
-    @CommandPlaceholder
-    fun list(actor: MinestomCommandActor) {
+    anyExecutor { sender, _ ->
         val players = ConnectionManager.onlinePlayers
         val size = players.size
 
@@ -35,7 +31,7 @@ class ListPlayersCommand {
             }
         )
 
-        actor.reply(
+        sender.sendMessage(
             text()
                 .append(text("Es ", NamedTextColor.GRAY))
                 .append {
@@ -49,6 +45,5 @@ class ListPlayersCommand {
                 .append(text("Spieler online: ", NamedTextColor.GRAY))
                 .append(joined)
         )
-
     }
 }

@@ -1,18 +1,13 @@
 package dev.slne.minestom.lobby.api.command
 
-import revxrsal.commands.Lamp
-import revxrsal.commands.LampBuilderVisitor
-import revxrsal.commands.minestom.actor.MinestomCommandActor
-
 /**
- * Registers commands after Lamp has been built.
+ * Registers commands once the command API is ready to accept them.
  *
- * Implement [LampBuilderVisitor] as well to contribute parameter types or other Lamp
- * configuration before this registrar receives the finished instance.
- * Implement [MinestomLampConfigVisitor] when the contribution must happen at the native
- * Minestom configuration layer, for example to register an argument type factory.
+ * Implementations build their commands with `CommandAPICommand` or `CommandTree` and register
+ * them from [register]. Registering outside of this callback is unsupported, because the backing
+ * platform is only installed for the duration of the server's lifecycle.
  */
 interface CommandRegistrar {
 
-    fun register(lamp: Lamp<MinestomCommandActor>)
+    fun register()
 }

@@ -29,7 +29,8 @@ inline fun <reified T : EventRegistrar> Binder.bindEventRegistrar() =
     bindIntoSet<EventRegistrar, T>()
 
 /**
- * Registers [T] as a [CommandRegistrar], so the server hands it Lamp during startup.
+ * Registers [T] as a [CommandRegistrar], so the server asks it to register its commands during
+ * startup.
  */
 inline fun <reified T : CommandRegistrar> Binder.bindCommandRegistrar() =
     bindIntoSet<CommandRegistrar, T>()
