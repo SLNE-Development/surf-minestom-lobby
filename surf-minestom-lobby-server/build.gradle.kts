@@ -3,7 +3,9 @@ import com.github.jengelman.gradle.plugins.shadow.transformers.Log4j2PluginsCach
 plugins {
     application
     alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.ksp)
     alias(libs.plugins.shadow)
+
     id("dev.slne.surf.api.gradle.minestom-relocations") version "+"
     kotlin("kapt")
 }
@@ -25,6 +27,17 @@ dependencies {
     implementation(libs.bundles.log4j)
     implementation(libs.terminal.console.appender)
     implementation(libs.fastutil)
+    implementation(libs.polar)
+
+    implementation(libs.komapper.annotation)
+    implementation(libs.komapper.jdbc)
+    runtimeOnly(libs.komapper.slf4j)
+    ksp(libs.komapper.processor)
+    implementation(libs.komapper.dialect.mariadb.jdbc)
+    implementation(libs.komapper.dialect.postgresql.jdbc)
+    implementation(libs.hikari)
+    runtimeOnly(libs.mariadb.jdbc)
+    runtimeOnly(libs.postgresql.jdbc)
 
     implementation(libs.fabric.mixin)
     annotationProcessor(libs.fabric.mixin)

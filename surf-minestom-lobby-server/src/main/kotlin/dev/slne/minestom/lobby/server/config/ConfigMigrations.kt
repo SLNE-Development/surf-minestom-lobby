@@ -11,6 +11,22 @@ object ConfigMigrations {
         while (version < ServerConfig.CURRENT_VERSION) {
             when (version) {
                 0 -> Unit
+
+                1 -> {
+                    root.node("database", "type").set("MARIADB")
+                    root.node("database", "url")
+                        .set("jdbc:mariadb://127.0.0.1:3306/surf_lobby")
+                    root.node("database", "username").set("surf_lobby")
+                    root.node("database", "password").set("change-me")
+
+                    root.node("database", "pool", "maximum-size").set(10)
+                    root.node("database", "pool", "minimum-idle").set(2)
+                    root.node("database", "pool", "connection-timeout-millis").set(10_000L)
+                    root.node("database", "pool", "validation-timeout-millis").set(5_000L)
+
+                    root.node("world", "database-key").set("lobby")
+                }
+
                 else -> error("Unsupported configuration version $version")
             }
 

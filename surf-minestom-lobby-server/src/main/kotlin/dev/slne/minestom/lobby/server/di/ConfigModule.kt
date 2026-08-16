@@ -15,4 +15,10 @@ class ConfigModule(private val config: ServerConfig) : AbstractModule() {
 
     @Provides
     fun sparkConfig(config: ServerConfig): ServerConfig.SparkConfig = config.performance.spark
+
+    @Provides
+    fun databaseConfig(config: ServerConfig): ServerConfig.DatabaseConfig = config.database
+
+    @Provides
+    fun worldConfig(config: ServerConfig): ServerConfig.WorldConfig = config.world
 }

@@ -6,6 +6,7 @@ import dev.slne.minestom.lobby.server.chat.ChatFormatService
 import dev.slne.minestom.lobby.server.chat.ChatService
 import dev.slne.minestom.lobby.server.command.CommandService
 import dev.slne.minestom.lobby.server.command.commandapi.MinestomCommandAPIService
+import dev.slne.minestom.lobby.server.database.LobbyDatabase
 import dev.slne.minestom.lobby.server.event.LobbyEventService
 import dev.slne.minestom.lobby.server.integration.luckperms.LuckPermsService
 import dev.slne.minestom.lobby.server.integration.spark.SparkService
@@ -20,6 +21,7 @@ class ServerLifecycle @Inject constructor(
     luckPerms: LuckPermsService,
     spark: SparkService,
     permissionLevel: PermissionLevelService,
+    database: LobbyDatabase,
     world: LobbyWorldService,
     players: LobbyPlayerService,
     commandApi: MinestomCommandAPIService,
@@ -33,6 +35,7 @@ class ServerLifecycle @Inject constructor(
         luckPerms,
         spark,
         permissionLevel,
+        database,
         world,
         players,
         commandApi,
@@ -95,6 +98,7 @@ internal fun orderedLobbyServices(
     luckPerms: LobbyService,
     spark: LobbyService,
     permissionLevel: LobbyService,
+    database: LobbyService,
     world: LobbyService,
     players: LobbyService,
     commandApi: LobbyService,
@@ -106,6 +110,7 @@ internal fun orderedLobbyServices(
     luckPerms,
     spark,
     permissionLevel,
+    database,
     world,
     players,
     commandApi,

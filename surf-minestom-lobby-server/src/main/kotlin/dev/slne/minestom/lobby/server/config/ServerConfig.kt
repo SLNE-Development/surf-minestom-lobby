@@ -20,6 +20,12 @@ data class ServerConfig(
     @Setting("velocity")
     val velocity: VelocityConfig = VelocityConfig(),
 
+    @Setting("database")
+    val database: DatabaseConfig = DatabaseConfig(),
+
+    @Setting("world")
+    val world: WorldConfig = WorldConfig(),
+
     @Setting("performance")
     val performance: PerformanceConfig = PerformanceConfig(),
 
@@ -36,7 +42,7 @@ data class ServerConfig(
     val configVersion: Int = CURRENT_VERSION
 ) {
     companion object {
-        const val CURRENT_VERSION = 1
+        const val CURRENT_VERSION = 2
     }
 
     @ConfigSerializable
@@ -53,6 +59,55 @@ data class ServerConfig(
     data class VelocityConfig(
         val enabled: Boolean = false,
         val secret: String = "secret"
+    )
+
+    @ConfigSerializable
+    data class DatabaseConfig(
+        @Comment("Database system used by the lobby.")
+        val type: DatabaseType = DatabaseType.MARIADB,
+
+        @Comment("JDBC connection URL.")
+        val url: String = "jdbc:mariadb://127.0.0.1:3306/surf_lobby",
+
+        @Comment("Database schema. Only used for PostgreSQL.")
+        val schema: String = "surf_minestom_lobby",
+
+        @NonBlank
+        val username: String = "surf_lobby",
+
+        val password: String = "change-me",
+
+        @Setting("pool")
+        val pool: DatabasePoolConfig = DatabasePoolConfig(),
+    )
+
+    enum class DatabaseType {
+        MARIADB,
+        POSTGRESQL,
+    }
+
+    @ConfigSerializable
+    data class DatabasePoolConfig(
+        @Setting("maximum-size")
+        @Comment("Maximum number of physical database connections.")
+        val maximumSize: Int = 10,
+
+        @Setting("minimum-idle")
+        val minimumIdle: Int = 1,
+
+        @Setting("connection-timeout-millis")
+        val connectionTimeoutMillis: Long = 10_000,
+
+        @Setting("validation-timeout-millis")
+        val validationTimeoutMillis: Long = 5_000,
+    )
+
+    @ConfigSerializable
+    data class WorldConfig(
+        @Setting("database-key")
+        @Comment("Key of the world entry stored in the database. May not be longer than 64 characters.")
+        @NonBlank
+        val databaseKey: String = "lobby",
     )
 
     @ConfigSerializable

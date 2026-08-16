@@ -3,21 +3,22 @@ package dev.slne.minestom.lobby.server.world
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import dev.slne.minestom.lobby.api.extension.buildInstance
+import dev.slne.minestom.lobby.server.config.ServerConfig
+import dev.slne.minestom.lobby.server.database.world.LobbyWorldRepository
 import dev.slne.minestom.lobby.server.lifecycle.LobbyService
 import dev.slne.minestom.lobby.server.world.block.LobbyBlockHandlers
-import dev.slne.minestom.lobby.server.world.entity.AnvilEntitySource
-import dev.slne.minestom.lobby.server.world.entity.VanillaEntityImporter
-import dev.slne.minestom.lobby.server.world.generator.FlatWorldGenerator
-import net.kyori.adventure.text.logger.slf4j.ComponentLogger
+import dev.slne.minestom.lobby.server.world.entity.PolarPaperWorldAccess
+import net.hollowcube.polar.PolarLoader
+import net.hollowcube.polar.PolarReader
 import net.minestom.server.instance.InstanceContainer
 import net.minestom.server.instance.LightingChunk
-import net.minestom.server.instance.anvil.AnvilLoader
-import net.minestom.server.world.DimensionType
-import kotlin.io.path.Path
-import kotlin.io.path.exists
 
 @Singleton
-class LobbyWorldService @Inject constructor() : LobbyService {
+class LobbyWorldService @Inject constructor(
+    private val publisher: LobbyWorldPublisher,
+    private val repository: LobbyWorldRepository,
+    private val config: ServerConfig.WorldConfig,
+) : LobbyService {
 
     private var container: InstanceContainer? = null
 
@@ -27,39 +28,19 @@ class LobbyWorldService @Inject constructor() : LobbyService {
         }
 
     override suspend fun start() {
-        val persistent = WORLD_PATH.exists()
+        publisher.publishAll()
 
-        if (persistent) {
-            LobbyBlockHandlers.register()
-        } else {
-            LOGGER.warn(
-                "Missing lobby world at '{}', creating a non-persistent flat world instead.",
-                WORLD_PATH
-            )
+        val storedWorld = checkNotNull(repository.find(config.databaseKey)) {
+            "Polar world '${config.databaseKey}' does not exist in the database"
         }
 
-        val world = buildInstance {
-            if (persistent) {
-                chunkLoader = AnvilLoader(WORLD_PATH, DimensionType.OVERWORLD.key())
-            } else {
-                setGenerator(FlatWorldGenerator)
-            }
+        container = buildInstance {
+            chunkLoader = PolarLoader(PolarReader.read(storedWorld.data))
+                .setWorldAccess(PolarPaperWorldAccess())
 
             setChunkSupplier(::LightingChunk)
         }
 
-        container = world
-
-        if (persistent) {
-            VanillaEntityImporter.importInto(
-                world,
-                AnvilEntitySource(WORLD_PATH, DimensionType.OVERWORLD.key())
-            )
-        }
-    }
-
-    private companion object {
-        val LOGGER = ComponentLogger.logger()
-        val WORLD_PATH = Path("worlds/lobby")
+        LobbyBlockHandlers.register()
     }
 }
