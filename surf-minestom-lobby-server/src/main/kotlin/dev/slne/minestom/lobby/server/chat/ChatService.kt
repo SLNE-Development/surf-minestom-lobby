@@ -7,8 +7,6 @@ import dev.slne.minestom.lobby.api.extension.CommandManager
 import dev.slne.minestom.lobby.api.extension.PacketListenerManager
 import dev.slne.minestom.lobby.api.extension.addListener
 import dev.slne.minestom.lobby.server.chat.signature.RemoteChatSession
-import dev.slne.minestom.lobby.server.command.commandapi.MinestomCommandOwnership
-import dev.slne.minestom.lobby.server.command.commandapi.brigadier.CommandPacketListener
 import dev.slne.minestom.lobby.server.lifecycle.LobbyService
 import dev.slne.minestom.lobby.server.player.LobbyPlayerImpl
 import dev.slne.minestom.lobby.server.player.requireLobbyPlayerImpl
@@ -23,9 +21,7 @@ import net.minestom.server.utils.PacketSendingUtils
  * Sets up secure chat and handles chat processing.
  */
 @Singleton
-class ChatService @Inject constructor(
-    private val ownership: MinestomCommandOwnership,
-) : LobbyService, EventRegistrar {
+class ChatService @Inject constructor() : LobbyService, EventRegistrar {
 
     override suspend fun start() {
         LobbyChatTypes.register()
@@ -57,26 +53,14 @@ class ChatService @Inject constructor(
 
         setPlayListener(ClientCommandChatPacket::class.java) { packet, player ->
             player.requireLobbyPlayerImpl().chatHandler.handleUnsignedCommandChat(packet.message()) { command ->
-                runCommand(player, command)
+                CommandManager.execute(player, command)
             }
         }
 
         setPlayListener(ClientSignedCommandChatPacket::class.java) { packet, player ->
             player.requireLobbyPlayerImpl().chatHandler.handleSignedCommandChat(packet) { command ->
-                runCommand(player, command)
+                CommandManager.execute(player, command)
             }
-        }
-    }
-
-    /**
-     * Runs a command typed by [player], through Brigadier when the command belongs to the CommandAPI
-     * and through Minestom otherwise.
-     */
-    private fun runCommand(player: LobbyPlayerImpl, command: String) {
-        if (ownership.ownsInput(command)) {
-            CommandPacketListener.dispatch(player, command)
-        } else {
-            CommandManager.execute(player, command)
         }
     }
 

@@ -4,8 +4,8 @@
   "package": "dev.slne.minestom.lobby.server.mixin",
   "compatibilityLevel": "JAVA_25",
   "mixins": [
+    "CommandManagerMixin",
     "EntityTickMixin",
-    "PlayerPacketOutEventMixin",
     "PlayerSocketConnectionMixin"
   ],
   "injectors": {

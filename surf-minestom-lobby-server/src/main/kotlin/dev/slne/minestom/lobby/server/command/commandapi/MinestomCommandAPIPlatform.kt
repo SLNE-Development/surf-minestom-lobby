@@ -125,12 +125,15 @@ internal class MinestomCommandAPIPlatform(
         /**
          * The merger of the currently installed platform, or `null` while none is installed.
          *
-         * The outgoing-packet listener is an event registrar with no access to the platform, which is
-         * created by the CommandAPI rather than by the injector.
+         * The platform is created by the CommandAPI rather than by the injector, so the mixin that
+         * reaches it through [CommandAPIHook] cannot be given it.
          */
         fun activeMerger(): DeclareCommandsMerger? = installed.get()?.merger
 
         /** The dispatcher of the currently installed platform, or `null` while none is installed. */
         fun activeDispatcher(): CommandDispatcher<CommandSender>? = installed.get()?.tree?.dispatcher
+
+        /** The name registry of the currently installed platform, or `null` while none is installed. */
+        fun activeOwnership(): MinestomCommandOwnership? = installed.get()?.ownership
     }
 }

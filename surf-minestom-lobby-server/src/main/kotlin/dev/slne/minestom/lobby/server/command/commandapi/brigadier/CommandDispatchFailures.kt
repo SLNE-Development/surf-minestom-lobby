@@ -30,18 +30,35 @@ internal fun reportSyntaxFailure(
     input: String,
     failure: CommandSyntaxException
 ) {
-    val heading = if (failure.cursor > 0) UNKNOWN_ARGUMENT_KEY else UNKNOWN_COMMAND_KEY
     val raw = failure.rawMessage
     val message = raw?.componentOrNull()
         ?: raw?.string?.takeIf(String::isNotBlank)?.let { text ->
             text(text, NamedTextColor.RED)
         }
 
+    report(sender, input, failure.cursor, message)
+}
+
+/**
+ * Reports an input no registry could resolve, in the same layout vanilla uses for a command it does
+ * not know: the heading, then the whole input marked as the offending part.
+ */
+internal fun reportUnknownCommand(sender: CommandSender, input: String) =
+    report(sender, input, cursor = 0, message = null)
+
+private fun report(
+    sender: CommandSender,
+    input: String,
+    cursor: Int,
+    message: Component?,
+) {
+    val heading = if (cursor > 0) UNKNOWN_ARGUMENT_KEY else UNKNOWN_COMMAND_KEY
+
     val body = text().append(translatable(heading, NamedTextColor.RED))
     if (message != null) {
         body.append(text(": ", NamedTextColor.RED)).append(message)
     }
-    body.appendNewline().append(contextOf(input, failure.cursor))
+    body.appendNewline().append(contextOf(input, cursor))
 
     sender.sendTranslated(body.build())
 }
