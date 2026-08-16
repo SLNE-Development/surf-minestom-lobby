@@ -1,10 +1,6 @@
 package dev.slne.minestom.lobby.server.command.impl
 
-import dev.slne.minestom.lobby.api.command.commandapi.dsl.anyExecutor
-import dev.slne.minestom.lobby.api.command.commandapi.dsl.commandTree
-import dev.slne.minestom.lobby.api.command.commandapi.dsl.gameModeArgument
-import dev.slne.minestom.lobby.api.command.commandapi.dsl.playerArgument
-import dev.slne.minestom.lobby.api.command.commandapi.dsl.playerExecutor
+import dev.slne.minestom.lobby.api.command.commandapi.dsl.*
 import dev.slne.minestom.lobby.server.permission.LobbyPermissions
 import net.kyori.adventure.text.Component.text
 import net.kyori.adventure.text.format.NamedTextColor
@@ -18,10 +14,10 @@ fun gamemodeCommand() = commandTree("gamemode") {
 
     gameModeArgument("gamemode") {
         playerExecutor { player, args ->
-            applyGameMode(player, args.get("gamemode"), player)
+            applyGameMode(player, args.get("gamemode"), listOf(player))
         }
 
-        playerArgument("target") {
+        playersArgument("target") {
             anyExecutor { sender, args ->
                 applyGameMode(sender, args.get("gamemode"), args.get("target"))
             }
@@ -29,11 +25,23 @@ fun gamemodeCommand() = commandTree("gamemode") {
     }
 }
 
-private fun applyGameMode(sender: CommandSender, gameMode: GameMode, target: Player) {
-    target.gameMode = gameMode
-
+private fun applyGameMode(sender: CommandSender, gameMode: GameMode, targets: List<Player>) {
+    val selfExecution = targets.size == 1 && targets.first() == sender
     val displayMode = text(gameMode.displayName, NamedTextColor.GOLD)
-    if (target == sender) {
+
+    for (player in targets) {
+        player.scheduleNextTick { player.gameMode = gameMode }
+
+        if (!selfExecution) {
+            player.sendMessage(
+                text("Dein Spielmodus wurde auf ", NamedTextColor.GRAY)
+                    .append(displayMode)
+                    .append(text(" gesetzt.", NamedTextColor.GRAY))
+            )
+        }
+    }
+
+    if (selfExecution) {
         sender.sendMessage(
             text("Dein Spielmodus wurde auf ", NamedTextColor.GRAY)
                 .append(displayMode)
@@ -42,13 +50,15 @@ private fun applyGameMode(sender: CommandSender, gameMode: GameMode, target: Pla
     } else {
         sender.sendMessage(
             text("Der Spielmodus von ", NamedTextColor.GRAY)
-                .append(text(target.username, NamedTextColor.GOLD))
+                .append {
+                    if (targets.size == 1) {
+                        text(targets.first().username, NamedTextColor.GOLD)
+                    } else {
+                        text(targets.size, NamedTextColor.GOLD)
+                            .append(text(" Spielern", NamedTextColor.GRAY))
+                    }
+                }
                 .append(text(" wurde auf ", NamedTextColor.GRAY))
-                .append(displayMode)
-                .append(text(" gesetzt.", NamedTextColor.GRAY))
-        )
-        target.sendMessage(
-            text("Dein Spielmodus wurde auf ", NamedTextColor.GRAY)
                 .append(displayMode)
                 .append(text(" gesetzt.", NamedTextColor.GRAY))
         )
