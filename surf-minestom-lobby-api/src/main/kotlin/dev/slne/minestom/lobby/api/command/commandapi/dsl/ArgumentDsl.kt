@@ -4,9 +4,6 @@ import dev.slne.minestom.lobby.api.command.commandapi.CommandAPICommand
 import dev.slne.minestom.lobby.api.command.commandapi.CommandTree
 import dev.slne.minestom.lobby.api.command.commandapi.argument.*
 import net.kyori.adventure.key.Key
-import net.kyori.adventure.nbt.BinaryTag
-import net.kyori.adventure.nbt.CompoundBinaryTag
-import net.kyori.adventure.text.Component
 import net.minestom.server.color.TeamColor
 import net.minestom.server.coordinate.Vec
 import net.minestom.server.entity.Entity
@@ -14,8 +11,6 @@ import net.minestom.server.entity.EntityType
 import net.minestom.server.entity.GameMode
 import net.minestom.server.entity.Player
 import net.minestom.server.instance.Instance
-import net.minestom.server.instance.block.Block
-import net.minestom.server.item.ItemStack
 import net.minestom.server.item.enchant.Enchantment
 import net.minestom.server.particle.Particle
 import net.minestom.server.potion.PotionEffect
@@ -154,38 +149,6 @@ inline fun CommandAPICommand.axisArgument(
     optional: Boolean = false,
     block: Argument<Set<Axis>>.() -> Unit = {},
 ): CommandAPICommand = withArguments(AxisArgument(nodeName).setOptional(optional).apply(block))
-
-inline fun CommandAPICommand.blockStateArgument(
-    nodeName: String,
-    optional: Boolean = false,
-    block: Argument<Block>.() -> Unit = {},
-): CommandAPICommand =
-    withArguments(BlockStateArgument(nodeName).setOptional(optional).apply(block))
-
-inline fun CommandAPICommand.itemStackArgument(
-    nodeName: String,
-    optional: Boolean = false,
-    block: Argument<ItemStack>.() -> Unit = {},
-): CommandAPICommand = withArguments(ItemStackArgument(nodeName).setOptional(optional).apply(block))
-
-inline fun CommandAPICommand.componentArgument(
-    nodeName: String,
-    optional: Boolean = false,
-    block: Argument<Component>.() -> Unit = {},
-): CommandAPICommand = withArguments(ComponentArgument(nodeName).setOptional(optional).apply(block))
-
-inline fun CommandAPICommand.nbtArgument(
-    nodeName: String,
-    optional: Boolean = false,
-    block: Argument<BinaryTag>.() -> Unit = {},
-): CommandAPICommand = withArguments(NBTArgument(nodeName).setOptional(optional).apply(block))
-
-inline fun CommandAPICommand.nbtCompoundArgument(
-    nodeName: String,
-    optional: Boolean = false,
-    block: Argument<CompoundBinaryTag>.() -> Unit = {},
-): CommandAPICommand =
-    withArguments(NBTCompoundArgument(nodeName).setOptional(optional).apply(block))
 
 inline fun CommandAPICommand.resourceLocationArgument(
     nodeName: String,
@@ -419,36 +382,6 @@ inline fun CommandTree.axisArgument(
     optional: Boolean = false,
     block: Argument<Set<Axis>>.() -> Unit = {},
 ): CommandTree = then(AxisArgument(nodeName).setOptional(optional).apply(block))
-
-inline fun CommandTree.blockStateArgument(
-    nodeName: String,
-    optional: Boolean = false,
-    block: Argument<Block>.() -> Unit = {},
-): CommandTree = then(BlockStateArgument(nodeName).setOptional(optional).apply(block))
-
-inline fun CommandTree.itemStackArgument(
-    nodeName: String,
-    optional: Boolean = false,
-    block: Argument<ItemStack>.() -> Unit = {},
-): CommandTree = then(ItemStackArgument(nodeName).setOptional(optional).apply(block))
-
-inline fun CommandTree.componentArgument(
-    nodeName: String,
-    optional: Boolean = false,
-    block: Argument<Component>.() -> Unit = {},
-): CommandTree = then(ComponentArgument(nodeName).setOptional(optional).apply(block))
-
-inline fun CommandTree.nbtArgument(
-    nodeName: String,
-    optional: Boolean = false,
-    block: Argument<BinaryTag>.() -> Unit = {},
-): CommandTree = then(NBTArgument(nodeName).setOptional(optional).apply(block))
-
-inline fun CommandTree.nbtCompoundArgument(
-    nodeName: String,
-    optional: Boolean = false,
-    block: Argument<CompoundBinaryTag>.() -> Unit = {},
-): CommandTree = then(NBTCompoundArgument(nodeName).setOptional(optional).apply(block))
 
 inline fun CommandTree.resourceLocationArgument(
     nodeName: String,
@@ -686,36 +619,6 @@ inline fun <T> Argument<T>.axisArgument(
     optional: Boolean = false,
     block: Argument<Set<Axis>>.() -> Unit = {},
 ): Argument<T> = then(AxisArgument(nodeName).setOptional(optional).apply(block))
-
-inline fun <T> Argument<T>.blockStateArgument(
-    nodeName: String,
-    optional: Boolean = false,
-    block: Argument<Block>.() -> Unit = {},
-): Argument<T> = then(BlockStateArgument(nodeName).setOptional(optional).apply(block))
-
-inline fun <T> Argument<T>.itemStackArgument(
-    nodeName: String,
-    optional: Boolean = false,
-    block: Argument<ItemStack>.() -> Unit = {},
-): Argument<T> = then(ItemStackArgument(nodeName).setOptional(optional).apply(block))
-
-inline fun <T> Argument<T>.componentArgument(
-    nodeName: String,
-    optional: Boolean = false,
-    block: Argument<Component>.() -> Unit = {},
-): Argument<T> = then(ComponentArgument(nodeName).setOptional(optional).apply(block))
-
-inline fun <T> Argument<T>.nbtArgument(
-    nodeName: String,
-    optional: Boolean = false,
-    block: Argument<BinaryTag>.() -> Unit = {},
-): Argument<T> = then(NBTArgument(nodeName).setOptional(optional).apply(block))
-
-inline fun <T> Argument<T>.nbtCompoundArgument(
-    nodeName: String,
-    optional: Boolean = false,
-    block: Argument<CompoundBinaryTag>.() -> Unit = {},
-): Argument<T> = then(NBTCompoundArgument(nodeName).setOptional(optional).apply(block))
 
 inline fun <T> Argument<T>.resourceLocationArgument(
     nodeName: String,

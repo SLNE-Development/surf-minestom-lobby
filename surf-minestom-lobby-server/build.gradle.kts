@@ -28,17 +28,18 @@ dependencies {
 
     implementation(libs.fabric.mixin)
     annotationProcessor(libs.fabric.mixin)
+    implementation(libs.mixin.extra)
+    annotationProcessor(libs.mixin.extra)
 
     implementation(libs.configurate.yaml)
     implementation(libs.configurate.kotlin)
     implementation(libs.luckperms.minestom)
     implementation(libs.spark.minestom)
 
-
     runtimeOnly(libs.surf.api.minestom)
     runtimeOnly(libs.surf.redis.minestom)
     runtimeOnly(libs.surf.rabbitmq.minestom)
-//    runtimeOnly(libs.surf.core.minestom)
+    runtimeOnly(libs.surf.core.minestom)
 //    runtimeOnly(libs.surf.clan.minestom)
 //    runtimeOnly(libs.surf.lobby.minestom)
 

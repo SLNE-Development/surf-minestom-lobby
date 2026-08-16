@@ -1,24 +1,44 @@
 package dev.slne.minestom.lobby.server.command.commandapi
 
+import com.mojang.brigadier.CommandDispatcher
 import dev.slne.minestom.lobby.api.command.commandapi.CommandDefinition
 import dev.slne.minestom.lobby.api.command.commandapi.RegisteredCommand
 import dev.slne.minestom.lobby.api.command.commandapi.internal.CommandAPIPlatform
+import dev.slne.minestom.lobby.api.coroutine.minestomAsyncScope
+import dev.slne.minestom.lobby.server.command.commandapi.brigadier.BrigadierCommandTree
+import dev.slne.minestom.lobby.server.command.commandapi.brigadier.DeclareCommandsMerger
 import it.unimi.dsi.fastutil.objects.ObjectArrayList
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet
+import kotlinx.coroutines.CoroutineScope
 import net.minestom.server.command.CommandManager
+import net.minestom.server.command.CommandSender
+import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
+/**
+ * Installs CommandAPI commands into the Brigadier dispatcher, which owns their parsing and dispatch.
+ *
+ * Commands registered here are unknown to Minestom's own command manager. The manager is still
+ * consulted so a name already taken by a foreign Minestom command is rejected rather than shadowed.
+ */
 internal class MinestomCommandAPIPlatform(
     private val commandManager: CommandManager,
     private val ownership: MinestomCommandOwnership,
+    suggestionScope: () -> CoroutineScope = { minestomAsyncScope },
     private val compiler: MinestomCommandCompiler = MinestomCommandCompiler(),
+    private val tree: BrigadierCommandTree = BrigadierCommandTree(suggestionScope = suggestionScope),
 ) : CommandAPIPlatform, AutoCloseable {
 
     private val lock = ReentrantLock()
     private val registrations = ObjectOpenHashSet<CompiledRegistration>()
+    private val merger = DeclareCommandsMerger(tree)
 
     private var closed = false
+
+    init {
+        installed.set(this)
+    }
 
     override fun register(
         definition: CommandDefinition,
@@ -33,15 +53,15 @@ internal class MinestomCommandAPIPlatform(
             }
         }
 
-        var nativeRegistered = false
+        var treeRegistered = false
         try {
-            commandManager.register(compiled.command)
-            nativeRegistered = true
+            tree.register(definition.name, compiled.names, definition)
+            treeRegistered = true
 
             ownership.claim(compiled.names, compiled)
             registrations += compiled
         } catch (failure: Throwable) {
-            if (nativeRegistered) {
+            if (treeRegistered) {
                 try {
                     detach(compiled)
                 } catch (rollbackFailure: Throwable) {
@@ -55,6 +75,9 @@ internal class MinestomCommandAPIPlatform(
         return compiled.registration
     }
 
+    override fun execute(sender: CommandSender, input: String): Int =
+        tree.dispatcher.execute(input, sender)
+
     override fun unregister(name: String): Boolean = lock.withLock {
         val compiled = ownership.find(name) ?: return false
         if (compiled !in registrations) return false
@@ -65,6 +88,7 @@ internal class MinestomCommandAPIPlatform(
     override fun close(): Unit = lock.withLock {
         if (closed) return
         closed = true
+        installed.compareAndSet(this, null)
 
         var failure: Throwable? = null
         val registrationsSnapshot = ObjectArrayList(registrations)
@@ -88,23 +112,25 @@ internal class MinestomCommandAPIPlatform(
         check(lock.isHeldByCurrentThread) { "Platform state lock must be held while detaching a command" }
 
         try {
-            unregisterNativeIfUncontested(compiled)
+            tree.unregister(compiled.registration.name)
         } finally {
             registrations.remove(compiled)
             ownership.release(compiled)
         }
     }
 
-    private fun unregisterNativeIfUncontested(compiled: CompiledRegistration) {
-        synchronized(commandManager) {
-            val hasForeignMapping = compiled.names.any { name ->
-                val current = commandManager.getCommand(name)
-                current != null && current !== compiled.command
-            }
+    internal companion object {
+        private val installed = AtomicReference<MinestomCommandAPIPlatform?>()
 
-            if (!hasForeignMapping) {
-                commandManager.unregister(compiled.command)
-            }
-        }
+        /**
+         * The merger of the currently installed platform, or `null` while none is installed.
+         *
+         * The outgoing-packet listener is an event registrar with no access to the platform, which is
+         * created by the CommandAPI rather than by the injector.
+         */
+        fun activeMerger(): DeclareCommandsMerger? = installed.get()?.merger
+
+        /** The dispatcher of the currently installed platform, or `null` while none is installed. */
+        fun activeDispatcher(): CommandDispatcher<CommandSender>? = installed.get()?.tree?.dispatcher
     }
 }

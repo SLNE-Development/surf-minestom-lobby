@@ -1,5 +1,6 @@
 package dev.slne.minestom.lobby.server.instrumentation;
 
+import com.llamalad7.mixinextras.MixinExtrasBootstrap;
 import dev.slne.minestom.lobby.server.instrumentation.mixin.InstrumentationMixinService;
 import java.lang.instrument.Instrumentation;
 import java.util.Arrays;
@@ -19,6 +20,7 @@ public final class LobbyAgent {
     try {
       InstrumentationMixinService.setInstrumentation(instrumentation);
       MixinBootstrap.init();
+      MixinExtrasBootstrap.init();
       Mixins.addConfiguration("mixins.surf-lobby.json");
       advanceMixinPhases();
 

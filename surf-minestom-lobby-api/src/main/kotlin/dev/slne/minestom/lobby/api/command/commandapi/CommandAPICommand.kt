@@ -331,7 +331,7 @@ internal fun validateAndFreezePaths(
     paths.forEach { path ->
         val names = ObjectOpenHashSet<String>(path.arguments.size)
         path.arguments.forEach { argument ->
-            if (!names.add(argument.nodeName)) {
+            if (argument.kind !is ArgumentKind.Literal && !names.add(argument.nodeName)) {
                 throw CommandValidationException(
                     "Executable path contains duplicate argument node names",
                 )
@@ -347,8 +347,7 @@ internal fun validateAndFreezePaths(
         ) {
             throw CommandValidationException("Required arguments cannot follow optional arguments")
         }
-        val greedyIndex =
-            path.arguments.indexOfFirst { argument -> argument.inputShape == InputShape.GREEDY }
+        val greedyIndex = path.arguments.indexOfFirst { argument -> argument.greedy }
         if (greedyIndex >= 0 && greedyIndex != path.arguments.lastIndex) {
             throw CommandValidationException("Greedy arguments must be terminal")
         }

@@ -5,6 +5,10 @@
  */
 package dev.slne.minestom.lobby.api.command.commandapi.argument
 
+import com.mojang.brigadier.LiteralMessage
+import com.mojang.brigadier.StringReader
+import com.mojang.brigadier.arguments.ArgumentType
+import com.mojang.brigadier.exceptions.SimpleCommandExceptionType
 import dev.slne.minestom.lobby.api.command.commandapi.exception.CommandValidationException
 import dev.slne.minestom.lobby.api.command.commandapi.executor.CommandExecutable
 import dev.slne.minestom.lobby.api.command.commandapi.executor.ExecutorDefinition
@@ -23,9 +27,6 @@ import java.util.*
 import dev.slne.minestom.lobby.api.command.commandapi.argument.Axis as AxisType
 import dev.slne.minestom.lobby.api.command.commandapi.argument.Rotation as RotationType
 import net.kyori.adventure.key.Key as AdventureKey
-import net.kyori.adventure.nbt.BinaryTag as AdventureBinaryTag
-import net.kyori.adventure.nbt.CompoundBinaryTag as AdventureCompoundBinaryTag
-import net.kyori.adventure.text.Component as AdventureComponent
 import net.minestom.server.color.TeamColor as MinestomTeamColor
 import net.minestom.server.coordinate.Vec as MinestomVec
 import net.minestom.server.entity.Entity as MinestomEntity
@@ -33,8 +34,6 @@ import net.minestom.server.entity.EntityType as MinestomEntityType
 import net.minestom.server.entity.GameMode as MinestomGameMode
 import net.minestom.server.entity.Player as MinestomPlayer
 import net.minestom.server.instance.Instance as MinestomInstance
-import net.minestom.server.instance.block.Block as MinestomBlock
-import net.minestom.server.item.ItemStack as MinestomItemStack
 import net.minestom.server.item.enchant.Enchantment as MinestomEnchantment
 import net.minestom.server.particle.Particle as MinestomParticle
 import net.minestom.server.potion.PotionEffect as MinestomPotionEffect
@@ -106,16 +105,6 @@ sealed interface ArgumentKind<T> {
 
     data object Axis : ArgumentKind<Set<AxisType>>
 
-    data object BlockState : ArgumentKind<MinestomBlock>
-
-    data object ItemStack : ArgumentKind<MinestomItemStack>
-
-    data object Component : ArgumentKind<AdventureComponent>
-
-    data object Nbt : ArgumentKind<AdventureBinaryTag>
-
-    data object NbtCompound : ArgumentKind<AdventureCompoundBinaryTag>
-
     data object ResourceLocation : ArgumentKind<AdventureKey>
 
     data object Time : ArgumentKind<Duration>
@@ -153,12 +142,6 @@ sealed interface ArgumentKind<T> {
     ) : ArgumentKind<KList<T>>
 }
 
-enum class InputShape {
-    WORD,
-    QUOTED,
-    GREEDY,
-}
-
 sealed interface SuggestionMode<out T> {
     data object BuiltIns : SuggestionMode<Nothing>
 
@@ -179,15 +162,43 @@ data class ArgumentDefinition<T>(
     val permissions: Set<String>,
     val requirements: KList<(CommandSender) -> KBoolean>,
     val suggestions: SuggestionMode<T>,
-    val inputShape: InputShape,
+    val greedy: KBoolean,
+    val rawType: ArgumentType<T>,
     val stringify: (T) -> String,
     val listDelimiter: Char? = null,
 )
 
+/**
+ * A raw type for an argument whose parser has not been implemented.
+ *
+ * Rejecting the input keeps an unfinished argument from silently reading a value that means
+ * something else.
+ */
+@ApiStatus.Internal
+class UnsupportedArgumentType<T>(private val nodeName: String) : ArgumentType<T> {
+    override fun parse(reader: StringReader): T = throw SimpleCommandExceptionType(
+        LiteralMessage("Argument '$nodeName' has no parser"),
+    ).createWithContext(reader)
+}
+
 abstract class Argument<T>(val nodeName: String) : CommandExecutable<Argument<T>> {
     protected abstract val kind: ArgumentKind<T>
 
-    protected open val inputShape: InputShape = InputShape.WORD
+    /**
+     * The Brigadier type that reads this argument's value from the command line.
+     *
+     * Kinds Brigadier already provides return its type directly, so parsing, bounds and error
+     * messages match vanilla exactly. Every other kind supplies its own parser.
+     */
+    protected abstract val rawType: ArgumentType<T>
+
+    /**
+     * Whether this argument consumes the rest of the command line.
+     *
+     * A greedy argument must be the last one on its path, and cannot be the element type of a list;
+     * registration throws [CommandValidationException] otherwise.
+     */
+    protected open val greedy: KBoolean = false
 
     protected open val listDelimiter: Char? = null
 
@@ -301,7 +312,8 @@ abstract class Argument<T>(val nodeName: String) : CommandExecutable<Argument<T>
         permissions = ObjectSets.unmodifiable(ObjectLinkedOpenHashSet(permissions)),
         requirements = ObjectLists.unmodifiable(ObjectArrayList(requirements)),
         suggestions = suggestions,
-        inputShape = inputShape,
+        greedy = greedy,
+        rawType = rawType,
         stringify = ::stringify,
         listDelimiter = listDelimiter,
     )

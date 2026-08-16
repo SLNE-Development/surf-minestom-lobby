@@ -5,22 +5,27 @@
  */
 package dev.slne.minestom.lobby.api.command.commandapi.argument
 
+import com.mojang.brigadier.arguments.ArgumentType
+import com.mojang.brigadier.arguments.StringArgumentType
+import dev.slne.minestom.lobby.api.command.commandapi.argument.parser.FixedSetParser
 import it.unimi.dsi.fastutil.objects.ObjectList
 
 class StringArgument(nodeName: String) : Argument<String>(nodeName) {
     override val kind = ArgumentKind.Word
+    override val rawType: ArgumentType<String> = StringArgumentType.word()
     override fun stringify(value: String): String = value
 }
 
 class TextArgument(nodeName: String) : Argument<String>(nodeName) {
     override val kind = ArgumentKind.Text
-    override val inputShape = InputShape.QUOTED
+    override val rawType: ArgumentType<String> = StringArgumentType.string()
     override fun stringify(value: String): String = value.asQuotablePhrase()
 }
 
 class GreedyStringArgument(nodeName: String) : Argument<String>(nodeName) {
     override val kind = ArgumentKind.GreedyString
-    override val inputShape = InputShape.GREEDY
+    override val rawType: ArgumentType<String> = StringArgumentType.greedyString()
+    override val greedy = true
     override fun stringify(value: String): String = value
 }
 
@@ -29,6 +34,7 @@ class LiteralArgument(
     val literal: String = nodeName,
 ) : Argument<String>(nodeName) {
     override val kind = ArgumentKind.Literal(literal)
+    override val rawType: ArgumentType<String> = UnsupportedArgumentType(nodeName)
 
     init {
         require(literal.isNotBlank()) { "Literal value must not be blank" }
@@ -41,6 +47,7 @@ class LiteralArgument(
 class MultiLiteralArgument(nodeName: String, vararg literals: String) : Argument<String>(nodeName) {
     private val literals: List<String> = ObjectList.of(*literals)
     override val kind = ArgumentKind.MultiLiteral(this.literals)
+    override val rawType: ArgumentType<String> = FixedSetParser(this.literals.associateWith { it })
 
     init {
         require(this.literals.isNotEmpty()) { "Multi-literal argument must contain at least one literal" }
@@ -54,9 +61,13 @@ class MultiLiteralArgument(nodeName: String, vararg literals: String) : Argument
     override fun stringify(value: String): String = value
 }
 
+/**
+ * Reads the remainder of the input as a single string, the same way [GreedyStringArgument] does.
+ */
 class CommandArgument(nodeName: String) : Argument<String>(nodeName) {
     override val kind = ArgumentKind.Command
-    override val inputShape = InputShape.GREEDY
+    override val rawType: ArgumentType<String> = StringArgumentType.greedyString()
+    override val greedy = true
 
     override fun stringify(value: String): String = value
 }

@@ -4,7 +4,7 @@ import dev.slne.minestom.lobby.api.command.commandapi.exception.CommandSyntaxExc
 import dev.slne.minestom.lobby.api.command.commandapi.exception.CommandValidationException
 import dev.slne.minestom.lobby.api.command.commandapi.internal.CommandAPIPlatform
 import net.kyori.adventure.text.Component
-import net.minestom.server.command.builder.CommandResult
+import net.minestom.server.command.CommandSender
 import org.jetbrains.annotations.ApiStatus
 import java.util.concurrent.atomic.AtomicReference
 
@@ -31,7 +31,16 @@ object CommandAPI {
 
     fun unregister(name: String): Boolean = installedPlatform().unregister(name)
 
-    fun resultOf(result: CommandResult): Int? = result.commandData?.get(RESULT_KEY)
+    /**
+     * Dispatches [input] as [sender] and returns the executed command's result value.
+     *
+     * [input] carries no leading slash. Callers that must not throw check ownership first.
+     *
+     * @throws com.mojang.brigadier.exceptions.CommandSyntaxException when the command is unknown, an
+     * argument is rejected, or input remains after a complete syntax.
+     */
+    fun execute(sender: CommandSender, input: String): Int =
+        installedPlatform().execute(sender, input)
 
     fun failWithString(message: String): Nothing = failWithMessage(Component.text(message))
 
@@ -50,7 +59,4 @@ object CommandAPI {
     }
 
     private val NAMESPACE_PATTERN = Regex("[a-z0-9_.-]+")
-
-    @ApiStatus.Internal
-    const val RESULT_KEY: String = "dev.slne.minestom.lobby.commandapi.result"
 }

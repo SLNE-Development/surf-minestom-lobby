@@ -1,14 +1,10 @@
 package dev.slne.minestom.lobby.server.command.commandapi
 
 import net.kyori.adventure.key.Key
-import net.kyori.adventure.text.Component
 import net.kyori.adventure.translation.GlobalTranslator
 import net.kyori.adventure.translation.TranslationStore
-import net.minestom.server.adventure.MinestomAdventure
-import net.minestom.server.command.CommandSender
-import net.minestom.server.entity.Player
 import java.text.MessageFormat
-import java.util.Locale
+import java.util.*
 
 /**
  * Server-side fallbacks for the vanilla command translation keys.

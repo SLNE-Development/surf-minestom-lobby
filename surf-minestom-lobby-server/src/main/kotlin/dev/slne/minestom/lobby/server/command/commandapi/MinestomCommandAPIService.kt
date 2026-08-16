@@ -9,7 +9,6 @@ import dev.slne.minestom.lobby.server.lifecycle.LobbyService
 @Singleton
 class MinestomCommandAPIService @Inject constructor(
     private val ownership: MinestomCommandOwnership,
-    private val suggestions: MinestomSuggestionService,
 ) : LobbyService {
     private var platform: MinestomCommandAPIPlatform? = null
 
@@ -29,11 +28,7 @@ class MinestomCommandAPIService @Inject constructor(
         try {
             installed.close()
         } finally {
-            try {
-                suggestions.close()
-            } finally {
-                CommandAPI.uninstallPlatform(installed)
-            }
+            CommandAPI.uninstallPlatform(installed)
         }
     }
 }

@@ -5,11 +5,15 @@ import dev.slne.minestom.lobby.api.di.bindCommandRegistrar
 import dev.slne.minestom.lobby.api.di.bindEventRegistrar
 import dev.slne.minestom.lobby.server.command.DefaultCommandRegistrar
 import dev.slne.minestom.lobby.server.command.commandapi.MinestomSuggestionListener
+import dev.slne.minestom.lobby.server.command.commandapi.brigadier.CommandPacketListener
+import dev.slne.minestom.lobby.server.command.commandapi.brigadier.DeclareCommandsListener
 
 class CommandModule : AbstractModule() {
 
     override fun configure() {
         binder().bindCommandRegistrar<DefaultCommandRegistrar>()
         binder().bindEventRegistrar<MinestomSuggestionListener>()
+        binder().bindEventRegistrar<CommandPacketListener>()
+        binder().bindEventRegistrar<DeclareCommandsListener>()
     }
 }
