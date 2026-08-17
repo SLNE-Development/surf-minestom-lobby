@@ -30,7 +30,7 @@ import java.util.concurrent.CompletableFuture
  * returned future is completed from a coroutine rather than on the netty thread.
  */
 internal class SuggestingArgumentType(
-    private val delegate: ArgumentType<Any>,
+    val delegate: ArgumentType<Any>,
     private val definition: ArgumentDefinition<*>,
     private val scope: () -> CoroutineScope = { minestomAsyncScope },
 ) : ArgumentType<Any> {

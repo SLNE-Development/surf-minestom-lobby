@@ -2,7 +2,6 @@ package dev.slne.minestom.lobby.server.lifecycle
 
 import com.google.inject.Inject
 import com.google.inject.Singleton
-import dev.slne.minestom.lobby.server.chat.ChatFormatService
 import dev.slne.minestom.lobby.server.chat.ChatService
 import dev.slne.minestom.lobby.server.command.CommandService
 import dev.slne.minestom.lobby.server.command.commandapi.MinestomCommandAPIService
@@ -27,7 +26,6 @@ class ServerLifecycle @Inject constructor(
     commandApi: MinestomCommandAPIService,
     commands: CommandService,
     chat: ChatService,
-    chatFormat: ChatFormatService,
     events: LobbyEventService,
 ) {
     private val services = orderedLobbyServices(
@@ -41,7 +39,6 @@ class ServerLifecycle @Inject constructor(
         commandApi,
         commands,
         chat,
-        chatFormat,
     )
 
     private val started = ArrayDeque<LobbyService>()
@@ -104,7 +101,6 @@ internal fun orderedLobbyServices(
     commandApi: LobbyService,
     commands: LobbyService,
     chat: LobbyService,
-    chatFormat: LobbyService,
 ): List<LobbyService> = listOf(
     events,
     luckPerms,
@@ -116,5 +112,4 @@ internal fun orderedLobbyServices(
     commandApi,
     commands,
     chat,
-    chatFormat,
 )

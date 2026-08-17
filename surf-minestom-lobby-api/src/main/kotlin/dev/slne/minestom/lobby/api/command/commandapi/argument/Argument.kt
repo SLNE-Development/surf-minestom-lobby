@@ -26,6 +26,7 @@ import java.time.Duration
 import java.util.*
 import dev.slne.minestom.lobby.api.command.commandapi.argument.Axis as AxisType
 import dev.slne.minestom.lobby.api.command.commandapi.argument.Rotation as RotationType
+import net.kyori.adventure.chat.SignedMessage as AdventureSignedMessage
 import net.kyori.adventure.key.Key as AdventureKey
 import net.minestom.server.color.TeamColor as MinestomTeamColor
 import net.minestom.server.coordinate.Vec as MinestomVec
@@ -82,6 +83,8 @@ sealed interface ArgumentKind<T> {
     data object FloatRange : ArgumentKind<Range.Float>
 
     data object Command : ArgumentKind<String>
+
+    data object SignedMessage : ArgumentKind<AdventureSignedMessage>
 
     data object Player : ArgumentKind<MinestomPlayer>
 

@@ -166,7 +166,11 @@ internal class BrigadierCommandTree(
         if (kind is ArgumentKind.Literal) return LiteralArgumentBuilder.literal(kind.literal)
 
         @Suppress("UNCHECKED_CAST")
-        val rawType = definition.rawType as ArgumentType<Any>
+        val rawType = if (kind is ArgumentKind.SignedMessage) {
+            SignedMessageArgumentType(definition.nodeName) as ArgumentType<Any>
+        } else {
+            definition.rawType as ArgumentType<Any>
+        }
         val type = if (definition.hasCustomSuggestions()) {
             SuggestingArgumentType(rawType, definition, suggestionScope)
         } else {

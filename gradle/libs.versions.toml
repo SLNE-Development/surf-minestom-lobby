@@ -51,6 +51,7 @@ surf-rabbitmq-minestom = { module = "dev.slne.surf.rabbitmq:surf-rabbitmq-minest
 surf-core-minestom = { module = "dev.slne.surf.core:surf-core-minestom", version = "+" }
 surf-clan-minestom = { module = "dev.slne.surf.clan:surf-clan-minestom", version = "+" }
 surf-lobby-minestom = { module = "dev.slne.surf.lobby:surf-lobby-minestom", version = "+" }
+surf-chat-minestom = { module = "dev.slne.surf.chat:surf-chat-minestom", version = "+" }
 
 log4j-api = { module = "org.apache.logging.log4j:log4j-api", version.ref = "log4j" }
 log4j-core = { module = "org.apache.logging.log4j:log4j-core", version.ref = "log4j" }

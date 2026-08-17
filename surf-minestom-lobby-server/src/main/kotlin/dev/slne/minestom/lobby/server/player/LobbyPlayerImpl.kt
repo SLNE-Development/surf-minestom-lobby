@@ -3,7 +3,11 @@ package dev.slne.minestom.lobby.server.player
 import com.google.inject.assistedinject.Assisted
 import com.google.inject.assistedinject.AssistedInject
 import dev.slne.minestom.lobby.api.player.LobbyPlayer
+import dev.slne.minestom.lobby.server.chat.BoundChatType
+import dev.slne.minestom.lobby.server.chat.LobbyChatTypes
+import dev.slne.minestom.lobby.server.chat.OutgoingChatMessage
 import dev.slne.minestom.lobby.server.chat.PlayerChatHandler
+import dev.slne.minestom.lobby.server.chat.signature.PlayerChatMessage
 import dev.slne.minestom.lobby.server.config.ServerConfig
 import dev.slne.minestom.lobby.server.integration.luckperms.LuckPermsService
 import dev.slne.minestom.lobby.server.packet.framed
@@ -12,6 +16,7 @@ import net.kyori.adventure.chat.SignedMessage
 import net.kyori.adventure.permission.PermissionChecker
 import net.kyori.adventure.pointer.Pointers
 import net.kyori.adventure.pointer.PointersSupplier
+import net.kyori.adventure.text.Component
 import net.kyori.adventure.util.TriState
 import net.luckperms.api.util.Tristate
 import net.minestom.server.crypto.ChatSession
@@ -59,6 +64,25 @@ class LobbyPlayerImpl @AssistedInject constructor(
         return PlayerInfoUpdatePacket(
             packet.actions(),
             packet.entries().map { it.withChatSession(session) }
+        )
+    }
+
+    override fun sendSignedMessage(
+        message: SignedMessage,
+        boundName: Component,
+        unsignedContent: Component?,
+    ) {
+        val signed = (message as? PlayerChatMessage.AdventureView)?.playerChatMessage
+        if (signed == null) {
+            sendMessage(unsignedContent ?: Component.text(message.message()))
+            return
+        }
+
+        OutgoingChatMessage.create(signed).sendToPlayer(
+            player = this,
+            filtered = false,
+            chatType = BoundChatType(LobbyChatTypes.raw, boundName),
+            unsigned = unsignedContent,
         )
     }
 

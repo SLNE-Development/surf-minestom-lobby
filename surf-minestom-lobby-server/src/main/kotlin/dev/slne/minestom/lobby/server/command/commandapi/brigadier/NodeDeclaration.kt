@@ -93,6 +93,8 @@ internal class NodeDeclarations {
             ArgumentKind.Axis -> NodeDeclaration(ArgumentParserType.SWIZZLE, null)
             ArgumentKind.GameMode -> NodeDeclaration(ArgumentParserType.GAMEMODE, null)
 
+            ArgumentKind.SignedMessage -> NodeDeclaration(ArgumentParserType.MESSAGE, null)
+
             // A custom argument reads whatever its base reads, so it is announced as that base.
             is ArgumentKind.Custom<*, *> -> baseDeclarationOf(kind.base)
 
@@ -161,6 +163,7 @@ internal class NodeDeclarations {
             ArgumentKind.Angle,
             ArgumentKind.Axis,
             ArgumentKind.GameMode,
+            ArgumentKind.SignedMessage,
             is ArgumentKind.Custom<*, *>,
                 -> error("Kind ${definition.kind} declares its parser directly")
         }

@@ -3,6 +3,7 @@ package dev.slne.minestom.lobby.api.command.commandapi.dsl
 import dev.slne.minestom.lobby.api.command.commandapi.CommandAPICommand
 import dev.slne.minestom.lobby.api.command.commandapi.CommandTree
 import dev.slne.minestom.lobby.api.command.commandapi.argument.*
+import net.kyori.adventure.chat.SignedMessage
 import net.kyori.adventure.key.Key
 import net.minestom.server.color.TeamColor
 import net.minestom.server.coordinate.Vec
@@ -62,6 +63,14 @@ inline fun CommandAPICommand.greedyStringArgument(
     block: Argument<String>.() -> Unit = {},
 ): CommandAPICommand = withArguments(
     GreedyStringArgument(nodeName).setOptional(optional).apply(block),
+)
+
+inline fun CommandAPICommand.signedMessageArgument(
+    nodeName: String,
+    optional: Boolean = false,
+    block: Argument<SignedMessage>.() -> Unit = {},
+): CommandAPICommand = withArguments(
+    SignedMessageArgument(nodeName).setOptional(optional).apply(block),
 )
 
 inline fun CommandAPICommand.literalArgument(
@@ -476,6 +485,12 @@ inline fun CommandTree.greedyStringArgument(
     block: Argument<String>.() -> Unit = {},
 ): CommandTree = then(GreedyStringArgument(nodeName).setOptional(optional).apply(block))
 
+inline fun CommandTree.signedMessageArgument(
+    nodeName: String,
+    optional: Boolean = false,
+    block: Argument<SignedMessage>.() -> Unit = {},
+): CommandTree = then(SignedMessageArgument(nodeName).setOptional(optional).apply(block))
+
 inline fun CommandTree.longArgument(
     nodeName: String,
     min: Long = Long.MIN_VALUE,
@@ -712,6 +727,12 @@ inline fun <T> Argument<T>.greedyStringArgument(
     optional: Boolean = false,
     block: Argument<String>.() -> Unit = {},
 ): Argument<T> = then(GreedyStringArgument(nodeName).setOptional(optional).apply(block))
+
+inline fun <T> Argument<T>.signedMessageArgument(
+    nodeName: String,
+    optional: Boolean = false,
+    block: Argument<SignedMessage>.() -> Unit = {},
+): Argument<T> = then(SignedMessageArgument(nodeName).setOptional(optional).apply(block))
 
 inline fun <T> Argument<T>.longArgument(
     nodeName: String,

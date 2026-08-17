@@ -10,8 +10,12 @@ import dev.slne.minestom.lobby.server.chat.signature.ProfilePublicKeyValidationE
 import dev.slne.minestom.lobby.server.chat.signature.RemoteChatSession
 import dev.slne.minestom.lobby.server.chat.signature.SignedMessageBody
 import dev.slne.minestom.lobby.server.chat.signature.SignedMessageChain
+import dev.slne.minestom.lobby.server.command.commandapi.SignedCommandArguments
+import dev.slne.minestom.lobby.server.command.commandapi.signableCommandArguments
+import dev.slne.minestom.lobby.server.command.commandapi.signaturesCoverArguments
 import dev.slne.minestom.lobby.server.config.ServerConfig
 import dev.slne.minestom.lobby.server.util.TickThrottler
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.Component.translatable
 import net.kyori.adventure.text.format.NamedTextColor
@@ -107,10 +111,12 @@ class PlayerChatHandler(
     ) {
         if (MinecraftServer.isStopping()) return
 
-        unpackAndApplyLastSeen(LastSeenMessages.Update.fromPacket(packet)) ?: return
+        val lastSeen = unpackAndApplyLastSeen(LastSeenMessages.Update.fromPacket(packet)) ?: return
 
         tryHandleChat(packet.message(), isCommand = true) {
-            onCommand(packet.message())
+            val signedArguments = getSignedArguments(packet, lastSeen) ?: return@tryHandleChat
+
+            SignedCommandArguments.withMessages(signedArguments) { onCommand(packet.message()) }
             detectRateSpam(commandSpamThrottler)
         }
     }
@@ -190,6 +196,49 @@ class PlayerChatHandler(
         )
 
         return signedMessageDecoder.unpack(packet.signature(), body)
+    }
+
+    /**
+     * The message the sender signed for every signable argument of [packet]'s command, keyed by node
+     * name, or `null` when the command must not run.
+     */
+    private fun getSignedArguments(
+        packet: ClientSignedCommandChatPacket,
+        lastSeenMessages: LastSeenMessages
+    ): Map<String, PlayerChatMessage>? {
+        val entries = packet.signatures().entries()
+        if (entries.isEmpty()) return emptyMap()
+
+        val values = signableCommandArguments(player, packet.message())
+        if (!signaturesCoverArguments(packet.signatures(), values)) {
+            LOGGER.error(
+                "Failed to match the signed arguments of {} against '{}'",
+                player.username,
+                packet.message()
+            )
+            signedMessageDecoder.setChainBroken()
+            disconnect(CHAT_VALIDATION_FAILED)
+            return null
+        }
+
+        val signedArguments = Object2ObjectOpenHashMap<String, PlayerChatMessage>(entries.size)
+        entries.forEach { entry ->
+            val body = SignedMessageBody(
+                content = values.getValue(entry.name()),
+                timeStamp = Instant.ofEpochMilli(packet.timestamp()),
+                salt = packet.salt(),
+                lastSeen = lastSeenMessages
+            )
+
+            try {
+                signedArguments[entry.name()] = signedMessageDecoder.unpack(entry.signature(), body)
+            } catch (failure: SignedMessageChain.DecodeException) {
+                handleMessageDecodeFailure(failure)
+                return null
+            }
+        }
+
+        return signedArguments
     }
 
     private inline fun tryHandleChat(message: String, isCommand: Boolean, chatHandler: () -> Unit) {
