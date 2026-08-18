@@ -15,6 +15,7 @@ plugins {
 
 repositories {
     maven("https://reposilite.slne.dev/public") { name = "slne-repository-public" }
+    maven("https://reposilite.slne.dev/releases") { name = "slne-repository-releases" }
     maven("https://repo.lucko.me/")
 }
 

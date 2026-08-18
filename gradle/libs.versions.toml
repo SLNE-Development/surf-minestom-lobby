@@ -3,7 +3,7 @@ kotlin = "2.4.10"
 shadow = "9.6.1"
 gremlim = "0.0.9"
 
-minestom = "2026.07.22-26.2"
+minestom = "2026.08.16-26.2"
 guice = "7.0.0"
 coroutines = "1.10.2"
 configurate = "1.0.0"
@@ -60,7 +60,7 @@ surf-punish-minestom = { module = "dev.slne.surf.punish:surf-punish-minestom", v
 surf-bitmap-provider-minestom = { module = "dev.slne.surf.bitmap:surf-bitmap-provider-minestom", version = "+" }
 surf-transaction-minestom = { module = "dev.slne.surf.transaction:surf-transaction-minestom", version = "+" }
 surf-queue-minestom = { module = "dev.slne.surf.queue:surf-queue-minestom", version = "+" }
-surf-playtime-minestom = { module = "dev.slne.surf.playtime:surf-playtime-minestom", version = "1.3.7" }
+surf-playtime-minestom = { module = "dev.slne.surf.playtime:surf-playtime-minestom", version = "+" }
 
 log4j-api = { module = "org.apache.logging.log4j:log4j-api", version.ref = "log4j" }
 log4j-core = { module = "org.apache.logging.log4j:log4j-core", version.ref = "log4j" }
