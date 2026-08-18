@@ -22,5 +22,6 @@ class LobbyServerModule(
         install(PermissionModule())
         install(ChatModule())
         install(CommandModule())
+        install(IntegrationModule())
     }
 }

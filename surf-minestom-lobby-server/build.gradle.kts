@@ -45,6 +45,8 @@ dependencies {
     implementation(libs.terminal.console.appender)
     runtimeDownload(libs.fastutil)
     runtimeDownload(libs.polar)
+    runtimeDownload(libs.npc)
+    runtimeDownload(libs.brigadier)
 
     runtimeDownload(libs.komapper.annotation)
     runtimeDownload(libs.komapper.jdbc)
@@ -77,6 +79,9 @@ dependencies {
     runtimeDownload(libs.surf.chat.minestom)
     runtimeDownload(libs.surf.bitmap.provider.minestom)
     runtimeDownload(libs.surf.clan.minestom)
+    runtimeDownload(libs.surf.transaction.minestom)
+    runtimeDownload(libs.surf.queue.minestom)
+    runtimeDownload(libs.surf.playtime.minestom)
 //    runtimeDownload(libs.surf.lobby.minestom)
 
     testImplementation(libs.minestom.testing)

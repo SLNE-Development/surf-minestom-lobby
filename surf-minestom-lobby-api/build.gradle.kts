@@ -11,7 +11,10 @@ dependencies {
     compileOnlyApi(libs.coroutines.core)
     compileOnlyApi(libs.bundles.log4j)
     compileOnlyApi(libs.fastutil)
-    api(libs.brigadier)
+    compileOnlyApi(libs.npc)
+
+    compileOnlyApi(libs.brigadier)
+    testApi(libs.brigadier)
 }
 
 kotlin {

@@ -387,4 +387,4 @@ internal fun <T> immutableSet(
     ObjectLinkedOpenHashSet(values),
 )
 
-private val COMMAND_NAME_PATTERN = Regex("[A-Za-z0-9_.-]+")
+private val COMMAND_NAME_PATTERN = Regex("""[\p{L}\p{N}_.-]+""")
