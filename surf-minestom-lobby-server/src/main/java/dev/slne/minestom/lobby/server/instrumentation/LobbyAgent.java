@@ -3,7 +3,6 @@ package dev.slne.minestom.lobby.server.instrumentation;
 import com.llamalad7.mixinextras.MixinExtrasBootstrap;
 import dev.slne.minestom.lobby.server.instrumentation.mixin.InstrumentationMixinService;
 import java.lang.instrument.Instrumentation;
-import java.util.Arrays;
 import me.lucko.luckperms.minestom.dependencies.LuckPermsAgent;
 import org.jspecify.annotations.NullMarked;
 import org.spongepowered.asm.launch.MixinBootstrap;
@@ -18,6 +17,8 @@ public final class LobbyAgent {
 
   public static void agentmain(String agentArgs, Instrumentation instrumentation) {
     try {
+      DependencyInstaller.install(instrumentation);
+
       InstrumentationMixinService.setInstrumentation(instrumentation);
       MixinBootstrap.init();
       MixinExtrasBootstrap.init();

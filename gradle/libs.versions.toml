@@ -1,6 +1,7 @@
 [versions]
 kotlin = "2.4.10"
 shadow = "9.6.1"
+gremlim = "0.0.9"
 
 minestom = "2026.07.22-26.2"
 guice = "7.0.0"
@@ -81,6 +82,7 @@ spark-minestom = { module = "me.lucko:spark-minestom", version.ref = "spark" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 shadow = { id = "com.gradleup.shadow", version.ref = "shadow" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+gremlim = { id = "xyz.jpenilla.gremlin-gradle", version.ref = "gremlim" }
 
 [bundles]
 log4j = ["log4j-api", "log4j-core", "log4j-slf4j2-impl"]

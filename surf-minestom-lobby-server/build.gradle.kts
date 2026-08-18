@@ -1,60 +1,79 @@
+import com.github.jengelman.gradle.plugins.shadow.relocation.SimpleRelocator
 import com.github.jengelman.gradle.plugins.shadow.transformers.Log4j2PluginsCacheFileTransformer
+import xyz.jpenilla.gremlin.gradle.ShadowGremlin
 
 plugins {
     application
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.ksp)
     alias(libs.plugins.shadow)
+    alias(libs.plugins.gremlim)
 
     id("dev.slne.surf.api.gradle.minestom-relocations") version "+"
     kotlin("kapt")
 }
 
 repositories {
-    mavenCentral()
-    maven("https://repo.lucko.me/")
-//    maven("https://repo.hypera.dev/snapshots/")
     maven("https://reposilite.slne.dev/public") { name = "slne-repository-public" }
+    maven("https://repo.lucko.me/")
+}
+
+configurations.compileOnly {
+    extendsFrom(configurations.runtimeDownload.get())
+}
+
+configurations.runtimeClasspath {
+    exclude(group = "com.google.code.gson", module = "gson")
+    exclude(group = "com.google.guava", module = "guava")
+    exclude(group = "com.github.ben-manes.caffeine", module = "caffeine")
+    exclude(group = "net.bytebuddy", module = "byte-buddy")
+    exclude(group = "org.checkerframework", module = "checker-qual")
+    exclude(group = "org.jetbrains", module = "annotations")
+    exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core")
+    exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core-jvm")
 }
 
 dependencies {
     implementation(projects.surfMinestomLobbyApi)
 
-    implementation(libs.minestom)
-    implementation(libs.guice)
-    implementation(libs.guice.assistedinject)
+    runtimeDownload(libs.minestom)
+    runtimeDownload(libs.guice)
+    runtimeDownload(libs.guice.assistedinject)
     implementation(libs.coroutines.core)
     implementation(libs.bundles.log4j)
+    implementation(libs.slf4j.api)
     implementation(libs.terminal.console.appender)
-    implementation(libs.fastutil)
-    implementation(libs.polar)
+    runtimeDownload(libs.fastutil)
+    runtimeDownload(libs.polar)
 
-    implementation(libs.komapper.annotation)
-    implementation(libs.komapper.jdbc)
-    runtimeOnly(libs.komapper.slf4j)
+    runtimeDownload(libs.komapper.annotation)
+    runtimeDownload(libs.komapper.jdbc)
+    runtimeDownload(libs.komapper.slf4j)
     ksp(libs.komapper.processor)
-    implementation(libs.komapper.dialect.mariadb.jdbc)
-    implementation(libs.komapper.dialect.postgresql.jdbc)
-    implementation(libs.hikari)
-    runtimeOnly(libs.mariadb.jdbc)
-    runtimeOnly(libs.postgresql.jdbc)
+    runtimeDownload(libs.komapper.dialect.mariadb.jdbc)
+    runtimeDownload(libs.komapper.dialect.postgresql.jdbc)
+    runtimeDownload(libs.hikari)
+    runtimeDownload(libs.mariadb.jdbc)
+    runtimeDownload(libs.postgresql.jdbc)
 
     implementation(libs.fabric.mixin)
     annotationProcessor(libs.fabric.mixin)
     implementation(libs.mixin.extra)
     annotationProcessor(libs.mixin.extra)
 
-    implementation(libs.configurate.yaml)
-    implementation(libs.configurate.kotlin)
+    runtimeDownload(libs.configurate.yaml)
+    runtimeDownload(libs.configurate.kotlin)
     implementation(libs.luckperms.minestom)
     implementation(libs.spark.minestom)
 
-    runtimeOnly(libs.surf.api.minestom)
-    runtimeOnly(libs.surf.redis.minestom)
-    runtimeOnly(libs.surf.rabbitmq.minestom)
-    runtimeOnly(libs.surf.core.minestom)
-    runtimeOnly(libs.surf.settings.minestom)
-    runtimeOnly(libs.surf.punish.minestom)
+    runtimeDownload(libs.surf.api.minestom)
+    runtimeDownload(libs.surf.redis.minestom) {
+        artifact { classifier = "all" }
+    }
+    runtimeDownload(libs.surf.rabbitmq.minestom)
+    runtimeDownload(libs.surf.core.minestom)
+    runtimeDownload(libs.surf.settings.minestom)
+    runtimeDownload(libs.surf.punish.minestom)
 //    runtimeOnly(libs.surf.chat.minestom)
 //    runtimeOnly(libs.surf.clan.minestom)
 //    runtimeOnly(libs.surf.lobby.minestom)
@@ -104,6 +123,31 @@ tasks.shadowJar {
                 "Implementation-Version" to libs.versions.asm.get()
             ),
             "org/objectweb/asm/"
+        )
+    }
+}
+
+tasks.writeDependencies {
+    val patternField = SimpleRelocator::class.java.getDeclaredField("pattern")
+        .apply { isAccessible = true }
+    val shadedPatternField = SimpleRelocator::class.java.getDeclaredField("shadedPattern")
+        .apply { isAccessible = true }
+
+    val relocators = tasks.shadowJar.get().relocators.get()
+    val simpleRelocators = relocators.filterIsInstance<SimpleRelocator>()
+    require(simpleRelocators.size == relocators.size) {
+        "Cannot mirror relocations onto $name: " +
+                (relocators - simpleRelocators.toSet()).joinToString { it::class.java.name } +
+                " are no SimpleRelocators"
+    }
+
+    simpleRelocators.forEach { relocator ->
+        ShadowGremlin.relocate(
+            this,
+            patternField.get(relocator) as String,
+            shadedPatternField.get(relocator) as String,
+            relocator.includes.toSet(),
+            relocator.excludes.toSet()
         )
     }
 }
