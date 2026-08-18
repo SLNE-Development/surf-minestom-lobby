@@ -74,9 +74,10 @@ dependencies {
     runtimeDownload(libs.surf.core.minestom)
     runtimeDownload(libs.surf.settings.minestom)
     runtimeDownload(libs.surf.punish.minestom)
-//    runtimeOnly(libs.surf.chat.minestom)
-//    runtimeOnly(libs.surf.clan.minestom)
-//    runtimeOnly(libs.surf.lobby.minestom)
+    runtimeDownload(libs.surf.chat.minestom)
+    runtimeDownload(libs.surf.bitmap.provider.minestom)
+//    runtimeDownload(libs.surf.clan.minestom)
+//    runtimeDownload(libs.surf.lobby.minestom)
 
     testImplementation(libs.minestom.testing)
     testImplementation(libs.junit.jupiter)

@@ -1,7 +1,10 @@
 package dev.slne.minestom.lobby.api.player
 
+import dev.slne.minestom.lobby.api.chat.RemoteChatSender
+import dev.slne.minestom.lobby.api.chat.RemoteSignedMessage
 import net.kyori.adventure.chat.SignedMessage
 import net.kyori.adventure.text.Component
+import net.minestom.server.crypto.ChatSession
 import net.minestom.server.entity.Player
 import net.minestom.server.network.player.GameProfile
 import net.minestom.server.network.player.PlayerConnection
@@ -27,6 +30,39 @@ abstract class LobbyPlayer @ApiStatus.Internal protected constructor(
         message: SignedMessage,
         boundName: Component,
         unsignedContent: Component?,
+    )
+
+    /**
+     * Captures [message] so that it can be shown to a player on another server.
+     *
+     * [unsignedContent] replaces what is displayed there without touching what was signed.
+     *
+     * Returns `null` for a message this server did not receive from a client, which therefore
+     * carries nothing another server could hand to a client.
+     */
+    abstract fun captureSignedMessage(
+        message: SignedMessage,
+        unsignedContent: Component?,
+    ): RemoteSignedMessage?
+
+    /**
+     * The chat session this player currently signs their messages under, or `null` while they have
+     * none.
+     */
+    abstract fun chatSession(): ChatSession?
+
+    /**
+     * Shows [message] to this player as coming from [sender], a player on another server.
+     *
+     * [sender] is announced to this player's client for as long as it takes to deliver the message,
+     * so that the signature can be verified without the sender ever being on this server.
+     *
+     * @see captureSignedMessage
+     */
+    abstract fun sendRemoteSignedMessage(
+        sender: RemoteChatSender,
+        message: RemoteSignedMessage,
+        boundName: Component,
     )
 
     fun displayName(): Component = (displayName ?: Component.text(username))
