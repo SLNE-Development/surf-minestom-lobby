@@ -53,6 +53,8 @@ dependencies {
     runtimeOnly(libs.surf.redis.minestom)
     runtimeOnly(libs.surf.rabbitmq.minestom)
     runtimeOnly(libs.surf.core.minestom)
+    runtimeOnly(libs.surf.settings.minestom)
+    runtimeOnly(libs.surf.punish.minestom)
 //    runtimeOnly(libs.surf.chat.minestom)
 //    runtimeOnly(libs.surf.clan.minestom)
 //    runtimeOnly(libs.surf.lobby.minestom)

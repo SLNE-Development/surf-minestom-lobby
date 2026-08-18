@@ -2,10 +2,11 @@ package dev.slne.minestom.lobby.server.command.commandapi
 
 import com.google.inject.Inject
 import com.google.inject.Singleton
+import com.mojang.brigadier.StringReader
+import com.mojang.brigadier.suggestion.Suggestions
+import dev.slne.minestom.lobby.api.command.commandapi.exception.componentOrNull
 import dev.slne.minestom.lobby.api.event.EventRegistrar
 import dev.slne.minestom.lobby.api.extension.addListener
-import dev.slne.minestom.lobby.api.command.commandapi.exception.componentOrNull
-import it.unimi.dsi.fastutil.objects.ObjectArrayList
 import net.minestom.server.event.Event
 import net.minestom.server.event.EventNode
 import net.minestom.server.event.player.PlayerPacketEvent
@@ -29,35 +30,57 @@ class MinestomSuggestionListener @Inject constructor(
 
     private fun handlePacket(event: PlayerPacketEvent) {
         val packet = event.packet as? ClientTabCompletePacket ?: return
-        if (ownership.findInput(packet.text) == null) return
+        val command = StringReader(packet.text)
+        if (command.canRead() && command.peek() == '/') {
+            command.skip()
+        }
+
+        val commandName = command.peekUnquotedString()
+
+        if (ownership.find(commandName) == null) return
 
         event.isCancelled = true
 
         val dispatcher = MinestomCommandAPIPlatform.activeDispatcher() ?: return
-        val input = packet.text.removePrefix("/")
-        val parse = dispatcher.parse(input, event.player)
-        val offset = packet.text.length - input.length
+        val parse = dispatcher.parse(command, event.player)
 
         dispatcher.getCompletionSuggestions(parse).thenAccept { suggestions ->
-            if (!event.player.isOnline) return@thenAccept
-
-            val matches = ObjectArrayList<TabCompletePacket.Match>(suggestions.list.size)
-            suggestions.list.forEach { suggestion ->
-                matches += TabCompletePacket.Match(
-                    suggestion.text,
-                    suggestion.tooltip?.componentOrNull(),
-                )
-            }
-
+            val suggestions = limitTo(suggestions)
             event.player.sendPacket(
                 TabCompletePacket(
                     packet.transactionId,
-                    suggestions.range.start + offset,
+                    suggestions.range.start,
                     suggestions.range.length,
-                    matches,
-                ),
+                    suggestions.list.map { suggestion ->
+                        TabCompletePacket.Match(
+                            suggestion.text,
+                            suggestion.tooltip?.componentOrNull()
+                        )
+                    }
+                )
             )
         }
     }
 
+    companion object {
+        private const val MAX_COMMAND_SUGGESTIONS = 1000
+
+        private fun StringReader.peekUnquotedString(): String {
+            val start = cursor
+            val string = readUnquotedString()
+            cursor = start
+            return string
+        }
+
+        private fun limitTo(
+            suggestions: Suggestions,
+            size: Int = MAX_COMMAND_SUGGESTIONS
+        ): Suggestions {
+            return if (suggestions.list.size <= size) {
+                suggestions
+            } else {
+                Suggestions(suggestions.range, suggestions.list.subList(0, size))
+            }
+        }
+    }
 }

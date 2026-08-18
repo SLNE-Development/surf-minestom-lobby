@@ -10,11 +10,6 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList
 import net.minestom.server.command.CommandSender
 import net.minestom.server.network.packet.server.play.DeclareCommandsPacket
 
-private const val NODE_ROOT = 0
-private const val NODE_LITERAL = 1
-private const val NODE_ARGUMENT = 2
-private const val NODE_EXECUTABLE = 0x04
-
 /**
  * Builds the command tree a client is shown, merging the CommandAPI's commands into the packet
  * Minestom produced for its own.
@@ -39,7 +34,7 @@ internal class DeclareCommandsMerger(
         roots.forEach { (labels, branches) ->
             labels.forEach { label ->
                 val node = DeclareCommandsPacket.Node()
-                node.flags = flagsOf(NODE_LITERAL, branches.executable)
+                node.flags = flagsOf(DeclareCommandsPacket.NodeType.LITERAL, branches.executable)
                 node.name = label
                 nodes += node
 
@@ -60,15 +55,20 @@ internal class DeclareCommandsMerger(
         val definition = source.definition
 
         if (definition == null) {
-            node.flags = flagsOf(NODE_LITERAL, source.executable)
+            node.flags = flagsOf(DeclareCommandsPacket.NodeType.LITERAL, source.executable)
             node.name = checkNotNull(source.literal)
         } else {
             val declaration = declarations.of(definition)
-            node.flags = flagsOf(NODE_ARGUMENT, source.executable)
+            val suggestionsType = declaration.suggestionsType
+            node.flags = flagsOf(
+                DeclareCommandsPacket.NodeType.ARGUMENT,
+                source.executable,
+                suggestionsType != null,
+            )
             node.name = definition.nodeName
             node.parser = declaration.parser
             node.properties = declaration.properties
-            node.suggestionsType = declaration.suggestionsType
+            if (suggestionsType != null) node.suggestionsType = suggestionsType
         }
 
         nodes += node
@@ -77,10 +77,15 @@ internal class DeclareCommandsMerger(
         return index
     }
 
-    private fun flagsOf(type: Int, executable: Boolean): Byte {
-        val flags = if (executable) type or NODE_EXECUTABLE else type
-        return flags.toByte()
-    }
+    /**
+     * The flags of a node: its type, whether it is executable, and whether it carries a suggestion
+     * type. A suggestion type is only written to the packet when the flags announce one.
+     */
+    private fun flagsOf(
+        type: DeclareCommandsPacket.NodeType,
+        executable: Boolean,
+        suggestionsType: Boolean = false,
+    ): Byte = DeclareCommandsPacket.getFlag(type, executable, false, suggestionsType)
 
     private fun copyOf(source: DeclareCommandsPacket.Node): DeclareCommandsPacket.Node {
         val node = DeclareCommandsPacket.Node()
