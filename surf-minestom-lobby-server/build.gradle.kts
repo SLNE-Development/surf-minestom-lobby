@@ -83,9 +83,13 @@ dependencies {
     runtimeDownload(libs.surf.transaction.minestom)
     runtimeDownload(libs.surf.queue.minestom)
     runtimeDownload(libs.surf.playtime.minestom)
+    runtimeDownload(libs.surf.jumppad.minestom)
+    runtimeDownload(libs.surf.content.creator.minestom)
+    runtimeDownload(libs.surf.friends.minestom)
 //    runtimeDownload(libs.surf.lobby.minestom)
 
     testImplementation(libs.minestom.testing)
+    testImplementation(libs.brigadier)
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.coroutines.test)
     testImplementation(kotlin("test"))
@@ -95,6 +99,7 @@ kotlin {
     jvmToolchain(25)
     compilerOptions {
         javaParameters = true
+        optIn.add("dev.slne.minestom.lobby.api.util.InternalMinestomLobbyApi")
     }
 }
 

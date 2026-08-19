@@ -19,6 +19,9 @@ dependencies {
 
 kotlin {
     jvmToolchain(25)
+    compilerOptions {
+        optIn.add("dev.slne.minestom.lobby.api.util.InternalMinestomLobbyApi")
+    }
 }
 
 publishing {

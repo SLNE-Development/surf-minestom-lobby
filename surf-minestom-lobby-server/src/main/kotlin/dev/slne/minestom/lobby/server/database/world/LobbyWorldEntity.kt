@@ -1,5 +1,6 @@
 package dev.slne.minestom.lobby.server.database.world
 
+import dev.slne.minestom.lobby.api.key.SurfKey
 import org.komapper.annotation.KomapperColumn
 import org.komapper.annotation.KomapperEntity
 import org.komapper.annotation.KomapperId
@@ -18,6 +19,9 @@ data class LobbyWorldEntity(
     @KomapperColumn("world_data")
     val data: ByteArray,
 ) {
+
+    fun surfKey() = SurfKey.key(key)
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is LobbyWorldEntity) return false
