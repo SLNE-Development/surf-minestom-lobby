@@ -84,7 +84,7 @@ dependencies {
     runtimeDownload(libs.surf.queue.minestom)
     runtimeDownload(libs.surf.playtime.minestom)
     runtimeDownload(libs.surf.jumppad.minestom)
-    runtimeDownload(libs.surf.content.creator.minestom)
+//    runtimeDownload(libs.surf.content.creator.minestom)
     runtimeDownload(libs.surf.friends.minestom)
 //    runtimeDownload(libs.surf.lobby.minestom)
 
