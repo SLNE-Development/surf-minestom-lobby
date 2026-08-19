@@ -63,6 +63,7 @@ surf-queue-minestom = { module = "dev.slne.surf.queue:surf-queue-minestom", vers
 surf-playtime-minestom = { module = "dev.slne.surf.playtime:surf-playtime-minestom", version = "+" }
 surf-content-creator-minestom = { module = "dev.slne.surf.content.creator:surf-content-creator-minestom", version = "+" }
 surf-friends-minestom = { module = "dev.slne.surf.friends:surf-friends-minestom", version = "+" }
+surf-social-minestom = { module = "dev.slne.surf.social:surf-social-minestom", version = "+" }
 surf-jumppad-minestom = { module = "dev.slne.surf.jumppad:surf-jumppad-minestom", version = "+" }
 
 log4j-api = { module = "org.apache.logging.log4j:log4j-api", version.ref = "log4j" }
