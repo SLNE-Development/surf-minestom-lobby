@@ -21,4 +21,8 @@ class ConfigModule(private val config: ServerConfig) : AbstractModule() {
 
     @Provides
     fun worldConfig(config: ServerConfig): ServerConfig.WorldConfig = config.world
+
+    @Provides
+    fun codeOfConductConfig(config: ServerConfig): ServerConfig.CodeOfConductConfig =
+        config.codeOfConduct
 }

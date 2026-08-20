@@ -44,6 +44,8 @@ object LobbyServerBootstrap {
         return ServerConfigLoader(CONFIG_PATH).load().also { config ->
             config.performance.applyTickDispatcherThreads()
 
+            applyKeepAliveDelay()
+
             val disabledEntityTypes = config.performance
                 .nonTickingEntityTypes
                 .map { key ->

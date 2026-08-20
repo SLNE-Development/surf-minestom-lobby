@@ -32,6 +32,9 @@ data class ServerConfig(
     @Setting("chat")
     val chat: ChatConfig = ChatConfig(),
 
+    @Setting("code-of-conduct")
+    val codeOfConduct: CodeOfConductConfig = CodeOfConductConfig(),
+
     @Setting("_config-version")
     @Comment(
         """
@@ -108,6 +111,23 @@ data class ServerConfig(
         @Comment("Key of the world entry stored in the database. May not be longer than 64 characters.")
         @NonBlank
         val databaseKey: String = "lobby",
+    )
+
+    @ConfigSerializable
+    data class CodeOfConductConfig(
+        @Comment("Whether players have to accept a code of conduct before they join.")
+        val enabled: Boolean = false,
+
+        @Setting("default-locale")
+        @Comment(
+            """
+            Locale used for players whose own locale has no uploaded text, written the way
+            Minecraft does it, for example en_us or de_de.
+            A text has to be uploaded for this locale while the code of conduct is enabled.
+            """
+        )
+        @NonBlank
+        val defaultLocale: String = "de_de",
     )
 
     @ConfigSerializable

@@ -7,9 +7,11 @@ import dev.slne.minestom.lobby.api.extension.PacketListenerManager
 import dev.slne.minestom.lobby.api.extension.addListener
 import dev.slne.minestom.lobby.api.player.event.PlayerToggleFlightEvent
 import dev.slne.minestom.lobby.api.player.lobbyPlayer
-import dev.slne.minestom.lobby.api.player.requireLobbyPlayer
 import dev.slne.minestom.lobby.server.config.ServerConfig
 import dev.slne.minestom.lobby.server.permission.LobbyPermissions
+import dev.slne.minestom.lobby.server.player.config.AwaitSettingsTask
+import dev.slne.minestom.lobby.server.player.config.CodeOfConductConfigurationTask
+import dev.slne.minestom.lobby.server.util.setConfigurationListener
 import dev.slne.minestom.lobby.server.util.setPlayListener
 import dev.slne.minestom.lobby.server.world.LobbyWorldService
 import net.minestom.server.entity.Player
@@ -17,6 +19,7 @@ import net.minestom.server.event.Event
 import net.minestom.server.event.EventDispatcher
 import net.minestom.server.event.EventNode
 import net.minestom.server.event.player.AsyncPlayerConfigurationEvent
+import net.minestom.server.event.player.PlayerDisconnectEvent
 import net.minestom.server.event.player.PlayerGameModeRequestEvent
 import net.minestom.server.listener.AbilitiesListener
 import net.minestom.server.network.packet.client.play.ClientPlayerAbilitiesPacket
@@ -27,17 +30,27 @@ import kotlin.experimental.and
 class LobbyPlayerListener @Inject constructor(
     private val world: LobbyWorldService,
     private val config: ServerConfig,
+    private val codeOfConduct: CodeOfConductConfigurationTask,
+    private val awaitSettings: AwaitSettingsTask,
 ) : EventRegistrar {
 
     override fun register(node: EventNode<Event>) {
         with(node) {
+            addListener(::handleDisconnect)
+            addListener(awaitSettings::handleSettingsChange)
             addListener(::handlePlayerConfiguration)
             addListener(::handleGameModeRequest)
         }
 
         with(PacketListenerManager) {
             setPlayListener(::handlePlayerAbilities)
+            setConfigurationListener(codeOfConduct::handleAcceptPacket)
         }
+    }
+
+    private fun handleDisconnect(event: PlayerDisconnectEvent) {
+        awaitSettings.handleDisconnect(event)
+        codeOfConduct.handleDisconnect(event)
     }
 
     private fun handlePlayerConfiguration(event: AsyncPlayerConfigurationEvent) {

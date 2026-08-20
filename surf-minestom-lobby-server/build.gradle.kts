@@ -48,6 +48,10 @@ dependencies {
     runtimeDownload(libs.polar)
     runtimeDownload(libs.npc)
     runtimeDownload(libs.brigadier)
+    runtimeDownload(libs.adventure.text.minimessage)
+    runtimeDownload(libs.mini.placeholders.minestom) {
+        isTransitive = false
+    }
 
     runtimeDownload(libs.komapper.annotation)
     runtimeDownload(libs.komapper.jdbc)
@@ -84,12 +88,16 @@ dependencies {
     runtimeDownload(libs.surf.queue.minestom)
     runtimeDownload(libs.surf.playtime.minestom)
     runtimeDownload(libs.surf.jumppad.minestom)
+//    runtimeDownload(libs.surf.parkour.minestom)
     runtimeDownload(libs.surf.content.creator.minestom)
     runtimeDownload(libs.surf.friends.minestom)
     runtimeDownload(libs.surf.social.minestom)
+    runtimeDownload(libs.surf.tab.minestom)
 //    runtimeDownload(libs.surf.lobby.minestom)
 
     testImplementation(libs.minestom.testing)
+    testImplementation(libs.guice)
+    testImplementation(libs.mini.placeholders.minestom) { isTransitive = false }
     testImplementation(libs.brigadier)
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.coroutines.test)

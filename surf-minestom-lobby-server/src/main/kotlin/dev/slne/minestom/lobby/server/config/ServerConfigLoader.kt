@@ -41,10 +41,8 @@ class ServerConfigLoader(private val path: Path) {
             ServerConfig()
         }
 
-        if (!fileExisted || migrated) {
-            root.set(config)
-            loader.save(root)
-        }
+        root.set(config)
+        loader.save(root)
 
         return config
     }

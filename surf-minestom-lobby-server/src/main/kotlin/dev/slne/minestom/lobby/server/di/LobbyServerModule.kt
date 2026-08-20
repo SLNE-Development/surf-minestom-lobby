@@ -17,6 +17,7 @@ class LobbyServerModule(
         install(MinestomModule(minecraftServer))
         install(ConfigModule(config))
 
+        install(UploadModule())
         install(WorldModule())
         install(PlayerModule())
         install(PermissionModule())

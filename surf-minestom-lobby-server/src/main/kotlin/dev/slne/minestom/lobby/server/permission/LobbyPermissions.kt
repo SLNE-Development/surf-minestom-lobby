@@ -15,6 +15,7 @@ object LobbyPermissions {
     const val STOP_COMMAND = "$COMMAND_PREFIX.stop"
     const val VERSION_COMMAND = "$COMMAND_PREFIX.version"
     const val KICK_COMMAND = "$COMMAND_PREFIX.kick"
+    const val UPLOADS_COMMAND = "$COMMAND_PREFIX.uploads"
 
     const val MAX_OP_LEVEL = 4
 

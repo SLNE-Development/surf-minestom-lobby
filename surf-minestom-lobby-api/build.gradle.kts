@@ -12,6 +12,8 @@ dependencies {
     compileOnlyApi(libs.bundles.log4j)
     compileOnlyApi(libs.fastutil)
     compileOnlyApi(libs.npc)
+    compileOnlyApi(libs.adventure.text.minimessage)
+    compileOnlyApi(libs.mini.placeholders.api)
 
     compileOnlyApi(libs.brigadier)
     testApi(libs.brigadier)

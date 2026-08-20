@@ -7,50 +7,131 @@ LuckPerms is embedded as a plain library on Minestom, so it is loaded by the
 system class loader and its own classes are not relocated at build time. Both
 facts broke the dependency manager, which was stubbed out with no-ops.
 
- - skip dependency relocation on Minestom, so downloaded jars keep the package
-   names LuckPerms itself was compiled against
  - append downloaded jars to the system class loader via the instrumentation
    API, which requires the host application to install LuckPermsAgent
  - let embedders supply their own ClassPathAppender via the builder
- - use the real DependencyManagerImpl, with no global dependencies to download
-   because those ship with the luckperms-minestom library
+ - use the real DependencyManagerImpl with the usual global dependencies,
+   except adventure, which Minestom itself provides
+ - publish reference-relocated (shaded) jars for the common and minestom
+   modules, so LuckPerms' own classes refer to the me.lucko.luckperms.lib
+   packages that the downloaded dependencies are relocated into
+ - stop shipping okhttp, okio, caffeine, byte-buddy, event-api and configurate
+   as dependencies of the minestom library - they are downloaded at runtime
+   instead, keeping them off the host application's class path
 
-diff --git a/common/src/main/java/me/lucko/luckperms/common/dependencies/DependencyRegistry.java b/common/src/main/java/me/lucko/luckperms/common/dependencies/DependencyRegistry.java
-index 088b25caae5246969dbdcccf242ebc1071b5537f..e68d39505a110b2e85794193cc0d5d500bb68ac6 100644
---- a/common/src/main/java/me/lucko/luckperms/common/dependencies/DependencyRegistry.java
-+++ b/common/src/main/java/me/lucko/luckperms/common/dependencies/DependencyRegistry.java
-@@ -64,6 +64,17 @@ public class DependencyRegistry {
-             Platform.Type.BUKKIT, Platform.Type.BUNGEECORD, Platform.Type.SPONGE, Platform.Type.NUKKIT
-     );
- 
-+    /**
-+     * Platforms on which LuckPerms is shipped as a plain library instead of a shaded plugin jar.
-+     *
-+     * <p>Its own classes are not relocated at build time on these platforms, so it still refers to
-+     * dependencies by their original package names - meaning downloaded dependencies must be left
-+     * alone too.</p>
-+     */
-+    private static final Set<Platform.Type> DEPENDENCIES_NOT_RELOCATED = ImmutableSet.of(
-+            Platform.Type.MINESTOM
-+    );
+diff --git a/common/build.gradle b/common/build.gradle
+index 2209c5b6f04f97baea0b3eb92f9794764a26dbe2..36ddb2f2f9f4e889c32a67d7e6a76fab57affd24 100644
+--- a/common/build.gradle
++++ b/common/build.gradle
+@@ -2,6 +2,38 @@ plugins {
+     id("java-library")
+     id("jacoco")
+     alias(libs.plugins.blossom)
++    alias(libs.plugins.shadow)
++}
 +
-     private final Platform.Type platformType;
++// Rewrite references to the libraries the dependency manager downloads at runtime, so they match
++// the relocated jars it produces (see the Dependency enum). Only this module's own classes are
++// shaded - no dependencies are bundled. Compilation and tests keep using the plain jar.
++shadowJar {
++    archiveClassifier = 'shaded'
++    configurations = []
++
++    relocate 'net.kyori.event', 'me.lucko.luckperms.lib.eventbus'
++    relocate 'com.github.benmanes.caffeine', 'me.lucko.luckperms.lib.caffeine'
++    relocate 'okio', 'me.lucko.luckperms.lib.okio'
++    relocate 'okhttp3', 'me.lucko.luckperms.lib.okhttp3'
++    relocate 'net.bytebuddy', 'me.lucko.luckperms.lib.bytebuddy'
++    relocate 'org.mariadb.jdbc', 'me.lucko.luckperms.lib.mariadb'
++    relocate 'com.mysql', 'me.lucko.luckperms.lib.mysql'
++    relocate 'org.postgresql', 'me.lucko.luckperms.lib.postgresql'
++    relocate 'com.zaxxer.hikari', 'me.lucko.luckperms.lib.hikari'
++    relocate 'com.mongodb', 'me.lucko.luckperms.lib.mongodb'
++    relocate 'org.bson', 'me.lucko.luckperms.lib.bson'
++    relocate 'redis.clients.jedis', 'me.lucko.luckperms.lib.jedis'
++    relocate 'io.nats.client', 'me.lucko.luckperms.lib.nats'
++    relocate 'com.rabbitmq', 'me.lucko.luckperms.lib.rabbitmq'
++    relocate 'org.apache.commons.pool2', 'me.lucko.luckperms.lib.commonspool2'
++    relocate 'ninja.leaping.configurate', 'me.lucko.luckperms.lib.configurate'
++    relocate 'org.yaml.snakeyaml', 'me.lucko.luckperms.lib.yaml'
++}
++
++configurations.runtimeElements.outgoing {
++    artifacts.clear()
++    artifact(shadowJar)
+ }
  
-     public DependencyRegistry(Platform.Type platformType) {
-@@ -106,6 +117,13 @@ public class DependencyRegistry {
+ test {
+diff --git a/minestom/build.gradle b/minestom/build.gradle
+index b568ab7d8e800113f3c2bf90e9678032e6c78011..ac55c4c19bd8c5d9a3efc42ffa65b93b486e6b8c 100644
+--- a/minestom/build.gradle
++++ b/minestom/build.gradle
+@@ -2,6 +2,7 @@ import org.apache.tools.ant.filters.ReplaceTokens
+ 
+ plugins {
+     id "java-library"
++    alias(libs.plugins.shadow)
+ }
+ 
+ // minestom requires java 21+
+@@ -19,9 +20,17 @@ dependencies {
+         exclude group: "org.spongepowered", module: "configurate-gson"
+         exclude group: "org.spongepowered", module: "configurate-hocon"
+         exclude group: "me.lucko.configurate", module: "configurate-toml"
++        // downloaded and relocated at runtime by the dependency manager - see shadowJar below
++        exclude group: "org.spongepowered", module: "configurate-core"
++        exclude group: "com.squareup.okhttp3", module: "okhttp"
++        exclude group: "com.squareup.okio", module: "okio"
++        exclude group: "com.github.ben-manes.caffeine", module: "caffeine"
++        exclude group: "net.bytebuddy", module: "byte-buddy"
++        exclude group: "net.kyori", module: "event-api"
      }
+     api("org.slf4j:slf4j-api:2.0.17")
+     compileOnly minestom
++    compileOnly "com.github.ben-manes.caffeine:caffeine:3.2.0"
  
-     public void applyRelocationSettings(Dependency dependency, List<Relocation> relocations) {
-+        // nothing is relocated on these platforms - clearing the rules means the dependency is used
-+        // as-is, and also avoids pulling in the jar relocator machinery at all
-+        if (DEPENDENCIES_NOT_RELOCATED.contains(this.platformType)) {
-+            relocations.clear();
-+            return;
-+        }
+     // testing
+     testImplementation(project(":common")) {
+@@ -63,6 +72,39 @@ java {
+     }
+ }
+ 
++// Rewrite references to the libraries the dependency manager downloads at runtime, so they match
++// the relocated jars it produces (see the Dependency enum). Only this module's own classes are
++// shaded - no dependencies are bundled.
++shadowJar {
++    archiveClassifier = 'shaded'
++    configurations = []
 +
-         // support for LuckPerms legacy (bukkit 1.7.10)
-         if (!RelocationHandler.DEPENDENCIES.contains(dependency) && isGsonRelocated()) {
-             relocations.add(Relocation.of("guava", "com{}google{}common"));
++    relocate 'net.kyori.event', 'me.lucko.luckperms.lib.eventbus'
++    relocate 'com.github.benmanes.caffeine', 'me.lucko.luckperms.lib.caffeine'
++    relocate 'okio', 'me.lucko.luckperms.lib.okio'
++    relocate 'okhttp3', 'me.lucko.luckperms.lib.okhttp3'
++    relocate 'net.bytebuddy', 'me.lucko.luckperms.lib.bytebuddy'
++    relocate 'org.mariadb.jdbc', 'me.lucko.luckperms.lib.mariadb'
++    relocate 'com.mysql', 'me.lucko.luckperms.lib.mysql'
++    relocate 'org.postgresql', 'me.lucko.luckperms.lib.postgresql'
++    relocate 'com.zaxxer.hikari', 'me.lucko.luckperms.lib.hikari'
++    relocate 'com.mongodb', 'me.lucko.luckperms.lib.mongodb'
++    relocate 'org.bson', 'me.lucko.luckperms.lib.bson'
++    relocate 'redis.clients.jedis', 'me.lucko.luckperms.lib.jedis'
++    relocate 'io.nats.client', 'me.lucko.luckperms.lib.nats'
++    relocate 'com.rabbitmq', 'me.lucko.luckperms.lib.rabbitmq'
++    relocate 'org.apache.commons.pool2', 'me.lucko.luckperms.lib.commonspool2'
++    relocate 'ninja.leaping.configurate', 'me.lucko.luckperms.lib.configurate'
++    relocate 'org.yaml.snakeyaml', 'me.lucko.luckperms.lib.yaml'
++}
++
++// Consumers run against the shaded jar; compilation keeps using the plain one, where the
++// original (compileOnly) dependencies are still on the class path.
++configurations.runtimeElements.outgoing {
++    artifacts.clear()
++    artifact(shadowJar)
++}
++
+ publishing {
+     repositories {
+         maven{
 diff --git a/minestom/src/main/java/me/lucko/luckperms/minestom/LPMinestomBootstrap.java b/minestom/src/main/java/me/lucko/luckperms/minestom/LPMinestomBootstrap.java
 index 9e9d5611c33ebca4463c32f78c08fab0c10ce826..30ac8d166cc834ea41db3e5ca201b24160e4e536 100644
 --- a/minestom/src/main/java/me/lucko/luckperms/minestom/LPMinestomBootstrap.java
@@ -99,7 +180,7 @@ index 9e9d5611c33ebca4463c32f78c08fab0c10ce826..30ac8d166cc834ea41db3e5ca201b241
  
      @Override
 diff --git a/minestom/src/main/java/me/lucko/luckperms/minestom/LPMinestomPlugin.java b/minestom/src/main/java/me/lucko/luckperms/minestom/LPMinestomPlugin.java
-index 898e8f4bc789a4f2540c34b8ec379345bff067a8..e0fcb2bfd06fb74f76a9e25f6963fe6c2404e11a 100644
+index 898e8f4bc789a4f2540c34b8ec379345bff067a8..5a239f97bad17052dd7f4ba31e5794dba84d03b6 100644
 --- a/minestom/src/main/java/me/lucko/luckperms/minestom/LPMinestomPlugin.java
 +++ b/minestom/src/main/java/me/lucko/luckperms/minestom/LPMinestomPlugin.java
 @@ -2,6 +2,7 @@ package me.lucko.luckperms.minestom;
@@ -127,17 +208,22 @@ index 898e8f4bc789a4f2540c34b8ec379345bff067a8..e0fcb2bfd06fb74f76a9e25f6963fe6c
  import me.lucko.luckperms.minestom.listeners.MinestomCommandListUpdater;
  import me.lucko.luckperms.minestom.listeners.MinestomConnectionListener;
  import me.lucko.luckperms.minestom.messaging.MinestomMessagingFactory;
-@@ -213,8 +213,11 @@ public final class LPMinestomPlugin extends AbstractLuckPermsPlugin {
+@@ -213,8 +213,16 @@ public final class LPMinestomPlugin extends AbstractLuckPermsPlugin {
      }
  
      @Override
 -    protected @NotNull DependencyManager createDependencyManager() {
 -        return NoopDependencyManager.INSTANCE;
 +    protected @NotNull Set<Dependency> getGlobalDependencies() {
-+        // adventure, caffeine, okio, okhttp, byte-buddy and the event bus are shipped as ordinary
-+        // (non-relocated) dependencies of the luckperms-minestom library, so unlike on the other
-+        // platforms there is nothing to download here
-+        return EnumSet.noneOf(Dependency.class);
++        // adventure is provided by Minestom itself; everything else is downloaded and relocated by
++        // the dependency manager, just like on the other platforms
++        return EnumSet.of(
++                Dependency.CAFFEINE,
++                Dependency.OKIO,
++                Dependency.OKHTTP,
++                Dependency.BYTEBUDDY,
++                Dependency.EVENT
++        );
      }
  
  }

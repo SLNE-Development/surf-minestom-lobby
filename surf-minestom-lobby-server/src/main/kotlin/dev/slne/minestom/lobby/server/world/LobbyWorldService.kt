@@ -16,7 +16,6 @@ import net.minestom.server.instance.LightingChunk
 
 @Singleton
 class LobbyWorldService @Inject constructor(
-    private val publisher: LobbyWorldPublisher,
     private val repository: LobbyWorldRepository,
     private val config: ServerConfig.WorldConfig,
 ) : LobbyService {
@@ -29,10 +28,9 @@ class LobbyWorldService @Inject constructor(
         }
 
     override suspend fun start() {
-        publisher.publishAll()
-
         val storedWorld = checkNotNull(repository.find(config.databaseKey)) {
-            "Polar world '${config.databaseKey}' does not exist in the database"
+            "Polar world '${config.databaseKey}' does not exist in the database. Place " +
+                    "'${config.databaseKey}.polar' into 'upload/worlds' and start again."
         }
 
         container = buildInstance {

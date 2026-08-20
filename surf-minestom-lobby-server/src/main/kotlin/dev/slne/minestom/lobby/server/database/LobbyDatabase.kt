@@ -5,6 +5,7 @@ import com.google.inject.Singleton
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import dev.slne.minestom.lobby.server.config.ServerConfig
+import dev.slne.minestom.lobby.server.database.codeofconduct.lobbyCodeOfConductEntity
 import dev.slne.minestom.lobby.server.database.world.lobbyWorldEntity
 import dev.slne.minestom.lobby.server.lifecycle.LobbyService
 import kotlinx.coroutines.ExecutorCoroutineDispatcher
@@ -15,8 +16,9 @@ import org.komapper.core.dsl.Meta
 import org.komapper.core.dsl.QueryDsl
 import org.komapper.dialect.mariadb.jdbc.MariaDbJdbcDialect
 import org.komapper.dialect.postgresql.jdbc.PostgreSqlJdbcDialect
+import org.komapper.jdbc.JdbcByteArrayType
 import org.komapper.jdbc.JdbcDatabase
-import java.sql.DriverManager
+import org.komapper.jdbc.JdbcDataTypeProvider
 import java.util.concurrent.Executors
 
 @Singleton
@@ -26,6 +28,9 @@ class LobbyDatabase @Inject constructor(
     companion object {
         private val LOGGER = ComponentLogger.logger()
         val SCHEMA_NAME_PATTERN = Regex("[A-Za-z_][A-Za-z0-9_]*")
+
+        /** MariaDB maps [ByteArray] to `varbinary(500)`, which no Polar world fits into. */
+        internal val MARIADB_DATA_TYPES = JdbcDataTypeProvider(JdbcByteArrayType("longblob"))
     }
 
     private lateinit var dispatcher: ExecutorCoroutineDispatcher
@@ -71,6 +76,7 @@ class LobbyDatabase @Inject constructor(
                     ServerConfig.DatabaseType.MARIADB -> JdbcDatabase(
                         dataSource = dataSource,
                         dialect = MariaDbJdbcDialect(),
+                        dataTypeProvider = MARIADB_DATA_TYPES,
                     )
 
                     ServerConfig.DatabaseType.POSTGRESQL -> JdbcDatabase(
@@ -81,6 +87,10 @@ class LobbyDatabase @Inject constructor(
 
                 database.runQuery {
                     QueryDsl.create(Meta.lobbyWorldEntity)
+                }
+
+                database.runQuery {
+                    QueryDsl.create(Meta.lobbyCodeOfConductEntity)
                 }
 
                 dataSource.connection.use { connection ->

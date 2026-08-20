@@ -37,6 +37,15 @@ class LobbyWorldRepository @Inject constructor(
         }
     }
 
+    suspend fun findAllKeys(): List<String> = database.query {
+        runQuery {
+            QueryDsl
+                .from(world)
+                .orderBy(world.key)
+                .select(world.key)
+        }
+    }.filterNotNull()
+
     suspend fun upsert(entity: LobbyWorldEntity) {
         database.query {
             runQuery {
@@ -47,4 +56,14 @@ class LobbyWorldRepository @Inject constructor(
             }
         }
     }
+
+    suspend fun delete(key: String): Boolean = database.query {
+        runQuery {
+            QueryDsl
+                .delete(world)
+                .where {
+                    world.key eq key
+                }
+        }
+    } > 0
 }
