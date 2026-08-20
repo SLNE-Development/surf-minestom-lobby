@@ -37,6 +37,10 @@ class MinestomPluginManager @Inject constructor(
                 )
             }
 
+            for ((_, entrypoint) in startedPlugins) {
+                entrypoint.afterStart()
+            }
+
             started = true
         } catch (startupFailure: Throwable) {
             rollback(startupFailure)
