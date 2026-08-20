@@ -12,13 +12,16 @@ import kotlinx.coroutines.ExecutorCoroutineDispatcher
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.withContext
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger
+import org.checkerframework.checker.tainting.qual.Untainted
 import org.komapper.core.dsl.Meta
 import org.komapper.core.dsl.QueryDsl
 import org.komapper.dialect.mariadb.jdbc.MariaDbJdbcDialect
 import org.komapper.dialect.postgresql.jdbc.PostgreSqlJdbcDialect
 import org.komapper.jdbc.JdbcByteArrayType
-import org.komapper.jdbc.JdbcDatabase
 import org.komapper.jdbc.JdbcDataTypeProvider
+import org.komapper.jdbc.JdbcDatabase
+import org.postgresql.PGConnection
+import java.sql.Connection
 import java.util.concurrent.Executors
 
 @Singleton
@@ -125,12 +128,20 @@ class LobbyDatabase @Inject constructor(
             "Invalid PostgreSQL schema name '${config.schema}'"
         }
 
+
+
         dataSource.connection.use { connection ->
+            val schema = safeSchema(connection)
+
             connection.createStatement().use { statement ->
-                statement.executeUpdate("CREATE SCHEMA IF NOT EXISTS ${config.schema}")
+                statement.executeUpdate("CREATE SCHEMA IF NOT EXISTS $schema")
             }
         }
     }
+
+    private fun safeSchema(connection: Connection): @Untainted String = connection
+        .unwrap(PGConnection::class.java)
+        .escapeIdentifier(config.schema)
 
     suspend fun <T> query(block: JdbcDatabase.() -> T): T {
         check(::database.isInitialized) { "LobbyDatabase has not been started yet" }

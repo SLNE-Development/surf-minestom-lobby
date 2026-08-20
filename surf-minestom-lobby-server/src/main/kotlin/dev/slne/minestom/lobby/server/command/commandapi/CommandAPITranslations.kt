@@ -8,9 +8,6 @@ import java.util.*
 
 /**
  * Server-side fallbacks for the vanilla command translation keys.
- *
- * Players resolve these keys in their own client language. Senders without a client have no
- * translator of their own, so the same keys are registered here for [sendTranslated].
  */
 object CommandAPITranslations {
     private val STORE_KEY = Key.key("surf", "commandapi")

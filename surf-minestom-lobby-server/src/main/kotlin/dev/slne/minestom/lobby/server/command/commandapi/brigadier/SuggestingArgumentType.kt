@@ -165,6 +165,6 @@ private fun SuggestionMode<*>.filterPolicy(): SuggestionFilter = when (this) {
     else -> SuggestionFilter.PREFIX
 }
 
-/** Whether [definition] carries a suggestion provider of its own. */
+/** Whether definition carries a suggestion provider of its own. */
 internal fun ArgumentDefinition<*>.hasCustomSuggestions(): Boolean =
     suggestions != SuggestionMode.BuiltIns

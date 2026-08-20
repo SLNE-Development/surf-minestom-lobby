@@ -7,6 +7,7 @@ import net.minestom.server.network.packet.PacketWriting
 import net.minestom.server.network.packet.server.FramedPacket
 import net.minestom.server.network.packet.server.ServerPacket
 
+@Suppress("UnstableApiUsage")
 object PacketOverrides {
 
     private val ids = object : ClassValue<Int?>() {
@@ -48,4 +49,5 @@ object PacketOverrides {
     }
 }
 
+@Suppress("UnstableApiUsage")
 fun OverridingPacket.framed(): FramedPacket = PacketOverrides.frame(this)

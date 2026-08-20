@@ -6,6 +6,7 @@ import com.google.inject.Singleton
 @Singleton
 class ResourcePackTask : ConfigurationTask {
 
+    @Suppress("UnstableApiUsage")
     override fun run(context: ConfigurationContext) {
         context.player.resourcePackFuture?.join()
     }

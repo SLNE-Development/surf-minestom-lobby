@@ -23,9 +23,11 @@ fun ServerProcess.launch(
     return minestomScope.launch(context, start, block)
 }
 
+@Suppress("UnstableApiUsage")
 suspend fun <T, R> AcquirableSource<T>.asyncSuspend(block: (T) -> R): R =
     acquirable().asyncSuspend(block)
 
+@Suppress("UnstableApiUsage")
 suspend fun <T, R> Acquirable<T>.asyncSuspend(block: (T) -> R): R {
     val acquire = this
     return withContext(Dispatchers.IO) {
@@ -37,6 +39,7 @@ suspend fun <T, R> Acquirable<T>.asyncSuspend(block: (T) -> R): R {
     }
 }
 
+@Suppress("UnstableApiUsage")
 suspend fun <T, R> Collection<Acquirable<T>>.asyncSuspend(block: (Collection<T>) -> R): R {
     val acquirableCollection = AcquirableCollection(this)
     return withContext(Dispatchers.IO) {

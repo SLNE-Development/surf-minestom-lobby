@@ -3,6 +3,7 @@ package dev.slne.minestom.lobby.server.chat.signature
 import net.kyori.adventure.text.Component
 import net.minestom.server.crypto.PlayerPublicKey
 import net.minestom.server.utils.crypto.KeyUtils
+import java.io.Serial
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.time.Instant
@@ -16,7 +17,12 @@ val INVALID_PROFILE_PUBLIC_KEY_SIGNATURE: Component =
     Component.translatable("multiplayer.disconnect.invalid_public_key_signature")
 
 
-class ProfilePublicKeyValidationException(val component: Component) : Exception(null, null, false, false)
+class ProfilePublicKeyValidationException(val component: Component) : Exception(null, null, false, false) {
+    companion object {
+        @Serial
+        private const val serialVersionUID: Long = -4832597595024741094L
+    }
+}
 
 fun PlayerPublicKey.createValidated(
     validator: ServiceSignatureValidator,

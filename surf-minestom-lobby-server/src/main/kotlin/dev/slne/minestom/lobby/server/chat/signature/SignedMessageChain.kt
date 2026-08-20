@@ -5,6 +5,7 @@ import net.kyori.adventure.text.Component.translatable
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger
 import net.minestom.server.crypto.MessageSignature
 import net.minestom.server.crypto.PlayerPublicKey
+import java.io.Serial
 import java.time.Instant
 import java.util.UUID
 import java.util.function.BooleanSupplier
@@ -84,6 +85,9 @@ class SignedMessageChain(profileId: UUID, sessionId: UUID) {
 
     class DecodeException(val component: Component) : Exception(null, null, false, false) {
         companion object {
+            @Serial
+            private const val serialVersionUID: Long = 6432477898999865178L
+
             val MISSING_PROFILE_KEY: Component = translatable("chat.disabled.missingProfileKey")
             val CHAIN_BROKEN: Component = translatable("chat.disabled.chain_broken")
             val EXPIRED_PROFILE_KEY: Component = translatable("chat.disabled.expiredProfileKey")
