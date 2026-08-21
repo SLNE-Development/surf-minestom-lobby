@@ -11,6 +11,7 @@ concurrency:
 
 jobs:
   publish:
+    environment: production
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
