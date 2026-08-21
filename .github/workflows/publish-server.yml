@@ -2,12 +2,15 @@ name: Publish server jar
 
 on:
   push:
-    branches: [master]
+    branches: [ master ]
   workflow_dispatch:
 
 concurrency:
   group: publish-server
   cancel-in-progress: false
+
+permissions:
+  contents: write
 
 jobs:
   publish:
@@ -35,7 +38,7 @@ jobs:
           GIT_COMMITTER_EMAIL: actions@slne.dev
         run: ./gradlew applyPatches
 
-      - name: Build and publish
+      - name: Build and publish internal jar to reposilite
         shell: bash
         env:
           GITHUB_ACTOR: ${{ github.actor }}
@@ -45,3 +48,20 @@ jobs:
         run: |
           ./gradlew :surf-minestom-lobby-server:build :surf-minestom-lobby-server:publish \
             -PinternalPlugins=true --refresh-dependencies
+
+      - name: Build public jar (without internal plugins)
+        shell: bash
+        run: |
+          ./gradlew :surf-minestom-lobby-server:shadowJar --refresh-dependencies
+          # Stable asset name for the egg; the fat jar is the one without -thin.
+          cp "$(ls surf-minestom-lobby-server/build/libs/*.jar | grep -v -- -thin | head -1)" \
+             surf-minestom-lobby-server.jar
+
+      - name: Update rolling "latest" release with the public jar
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Latest master build
+          prerelease: true
+          make_latest: false
+          files: surf-minestom-lobby-server.jar
