@@ -13,6 +13,7 @@ import net.minestom.server.entity.metadata.display.ItemDisplayMeta
 import net.minestom.server.entity.metadata.display.TextDisplayMeta
 import net.minestom.server.entity.metadata.item.ItemEntityMeta
 import net.minestom.server.entity.metadata.other.ArmorStandMeta
+import net.minestom.server.entity.metadata.other.EndCrystalMeta
 import net.minestom.server.entity.metadata.other.ItemFrameMeta
 import net.minestom.server.entity.metadata.other.PaintingMeta
 import net.minestom.server.entity.metadata.villager.VillagerMeta
@@ -129,6 +130,12 @@ object EntityNbtMappers {
             nbt.stringOrNull("variant")
                 ?.let { MinecraftServer.getCatVariantRegistry().getKey(Key.key(it)) }
                 ?.let { entity.set(DataComponents.CAT_VARIANT, it) }
+        },
+        entry(EntityType.END_CRYSTAL) { entity, nbt ->
+            entity.editEntityMeta<EndCrystalMeta> { meta ->
+                nbt.booleanOrNull("ShowBottom")
+                    ?.let { meta.isShowingBottom = it }
+            }
         }
     )
 
