@@ -4,6 +4,7 @@ import xyz.jpenilla.gremlin.gradle.ShadowGremlin
 
 plugins {
     application
+    `maven-publish`
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.ksp)
     alias(libs.plugins.shadow)
@@ -13,10 +14,45 @@ plugins {
     kotlin("kapt")
 }
 
+val internalPlugins = providers.gradleProperty("internalPlugins")
+    .map(String::toBoolean)
+    .getOrElse(false)
+
 repositories {
     maven("https://reposilite.slne.dev/public") { name = "slne-repository-public" }
     maven("https://reposilite.slne.dev/releases") { name = "slne-repository-releases" }
     maven("https://repo.lucko.me/")
+
+    if (internalPlugins) {
+        val githubUser = providers.gradleProperty("gpr.user")
+            .orElse(providers.environmentVariable("GITHUB_ACTOR"))
+        val githubToken = providers.gradleProperty("gpr.key")
+            .orElse(providers.environmentVariable("GITHUB_TOKEN"))
+
+        if (!githubUser.isPresent || !githubToken.isPresent) {
+            logger.warn(
+                "internalPlugins is enabled but GitHub Packages credentials are missing. " +
+                        "Set gpr.user/gpr.key in ~/.gradle/gradle.properties " +
+                        "(or GITHUB_ACTOR/GITHUB_TOKEN in the environment), " +
+                        "or build with -PinternalPlugins=false."
+            )
+        }
+
+        exclusiveContent {
+            forRepository {
+                maven("https://maven.pkg.github.com/SLNE-Development/surf-minestom-anticheat") {
+                    name = "github-surf-minestom-anticheat"
+                    credentials {
+                        username = githubUser.orNull
+                        password = githubToken.orNull
+                    }
+                }
+            }
+            filter {
+                includeGroup("dev.slne.minestom")
+            }
+        }
+    }
 }
 
 configurations.compileOnly {
@@ -99,6 +135,10 @@ dependencies {
     runtimeDownload(libs.surf.trophy.minestom)
     runtimeDownload(libs.surf.lobby.minestom)
 
+    if (internalPlugins) {
+        runtimeOnly(libs.surf.anticheat.minestom) { isTransitive = false }
+    }
+
     testImplementation(libs.minestom.testing)
     testImplementation(libs.npc)
     testImplementation(libs.guice)
@@ -180,4 +220,21 @@ tasks.writeDependencies {
 
 tasks.build {
     dependsOn(tasks.shadowJar)
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("lobbyServer") {
+            artifact(tasks.shadowJar)
+        }
+    }
+    repositories {
+        maven("https://reposilite.slne.dev/private") {
+            name = "slne-repository-private"
+            credentials {
+                username = providers.environmentVariable("REPOSILITE_USER").orNull
+                password = providers.environmentVariable("REPOSILITE_TOKEN").orNull
+            }
+        }
+    }
 }

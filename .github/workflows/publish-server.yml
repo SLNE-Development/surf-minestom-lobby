@@ -1,0 +1,46 @@
+name: Publish server jar
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+concurrency:
+  group: publish-server
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Init submodules
+        shell: bash
+        run: git -c 'url.https://github.com/.insteadOf=git@github.com:' submodule update --init --recursive
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 25
+
+      - name: Apply vendor patches
+        shell: bash
+        working-directory: vendor
+        env:
+          GIT_AUTHOR_NAME: github-actions
+          GIT_AUTHOR_EMAIL: actions@slne.dev
+          GIT_COMMITTER_NAME: github-actions
+          GIT_COMMITTER_EMAIL: actions@slne.dev
+        run: ./gradlew applyPatches
+
+      - name: Build and publish
+        shell: bash
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GH_PACKAGES_READ_TOKEN }}
+          REPOSILITE_USER: ${{ secrets.REPOSILITE_PRIVATE_USER }}
+          REPOSILITE_TOKEN: ${{ secrets.REPOSILITE_PRIVATE_TOKEN }}
+        run: |
+          ./gradlew :surf-minestom-lobby-server:build :surf-minestom-lobby-server:publish \
+            -PinternalPlugins=true --refresh-dependencies
