@@ -15,6 +15,11 @@ data class ServerConfig(
 
     @Setting("spawn")
     val spawn: ConfigPosition = ConfigPosition(),
+
+    @Setting("force-load")
+    @Comment("Whether the server should load chunks in the force-load range.")
+    val forceLoad: ForceLoadConfig = ForceLoadConfig(),
+
     val defaultGameMode: GameMode = GameMode.SURVIVAL,
 
     @Setting("velocity")
@@ -46,6 +51,23 @@ data class ServerConfig(
 ) {
     companion object {
         const val CURRENT_VERSION = 2
+    }
+
+    @ConfigSerializable
+    data class ForceLoadConfig(
+        val enabled: Boolean = true,
+
+        @Comment("The first corner of the force-load range. The range is inclusive.")
+        val from: Chunk = Chunk(0, 0),
+
+        @Comment("The opposite corner of the force-load range. The range is inclusive.")
+        val to: Chunk = Chunk(0, 0),
+    ) {
+        @ConfigSerializable
+        data class Chunk(
+            val x: Int,
+            val z: Int,
+        )
     }
 
     @ConfigSerializable
