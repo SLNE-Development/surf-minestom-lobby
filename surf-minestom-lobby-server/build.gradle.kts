@@ -161,7 +161,7 @@ dependencies {
 
     if (internalPlugins) {
         runtimeOnly(libs.surf.anticheat.minestom) { isTransitive = false }
-        runtimeOnly(libs.surf.ban.bypass.minestom) { isTransitive = false }
+        runtimeOnly(libs.surf.ban.bypass.minestom)
     }
 
     testImplementation(libs.minestom.testing)
