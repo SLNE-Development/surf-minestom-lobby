@@ -1,8 +1,9 @@
 # Internal plugins
 
-Internal/private plugins (e.g. anticheat) are published to private GitHub Packages
-repositories and are an **optional** part of the build: without access they are
-simply excluded and the build works normally.
+Internal/private plugins (e.g. anticheat, ban bypass) are published to private
+repositories — GitHub Packages or reposilite's `private` repository — and are an
+**optional** part of the build: without access they are simply excluded and the
+build works normally.
 
 ## Enabling
 
@@ -14,6 +15,8 @@ simply excluded and the build works normally.
    ```
 
    In CI, `GITHUB_ACTOR`/`GITHUB_TOKEN` environment variables work as a fallback.
+   Plugins hosted on reposilite instead need `REPOSILITE_USER`/`REPOSILITE_TOKEN`
+   in the environment.
 
 2. Build with `-PinternalPlugins=true` (or put `internalPlugins=true` in
    `~/.gradle/gradle.properties`).
@@ -25,9 +28,12 @@ Everything lives in `surf-minestom-lobby-server/build.gradle.kts`, gated on the
 with the repositories of the *resolving* project, so a repository declared in a
 helper module would never be consulted for the server's `runtimeClasspath`.
 
-- The private GitHub Packages repositories are declared as `exclusiveContent`
-  with credentials, filtered to the internal groups — so only internal plugins
-  are looked up on GitHub and the public repositories are never asked for them.
+- Every private repository is declared as its own `exclusiveContent` block with
+  credentials, filtered to the coordinates it hosts — so only internal plugins are
+  looked up there and the public repositories are never asked for them. One block
+  per repository is mandatory: `forRepository` takes a single repository, and a
+  second one in the same block would end up a regular repository that is
+  *excluded* from the filtered content.
 - The plugins are `runtimeOnly(...) { isTransitive = false }`, so they land on
   the runtime classpath and are **shaded** by `shadowJar` — unlike the public
   plugins, which gremlin downloads at runtime (gremlin has no credentials at
@@ -37,8 +43,8 @@ helper module would never be consulted for the server's `runtimeClasspath`.
 
 ## Adding a plugin
 
-1. Add a `forRepository` block for its GitHub repository (if new) and make sure
-   its group is covered by the `filter` in the `exclusiveContent` block.
+1. Add an `exclusiveContent` block for its repository (if new) and make sure its
+   coordinates are covered by that block's `filter`.
 2. Add the coordinates to `gradle/libs.versions.toml` and a
    `runtimeOnly(...) { isTransitive = false }` line in the `internalPlugins`
    dependencies block. Private-only transitive dependencies must be listed

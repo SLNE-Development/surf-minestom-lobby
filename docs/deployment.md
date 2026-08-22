@@ -32,10 +32,11 @@ reposilite repository, and the egg's install script only downloads it, so
 Most of what the jar bundles is versioned `+`, so a plugin release changes the
 build output without any commit here. `.github/workflows/check-plugin-updates.yml`
 closes that gap: once a day (03:17 UTC, plus `workflow_dispatch`) it runs
-`.github/scripts/bundled-plugin-versions.sh`, which asks reposilite and GitHub
-Packages for the `maven-metadata.xml` of every `+` coordinate — the catalog
-libraries (24 today) plus the `minestom-relocations` Gradle plugin marker — and
-prints the available versions per module.
+`.github/scripts/bundled-plugin-versions.sh`, which asks reposilite (public,
+releases and private) and GitHub Packages for the `maven-metadata.xml` of every
+`+` coordinate — the catalog libraries (25 today) plus the
+`minestom-relocations` Gradle plugin marker — and prints the available versions
+per module.
 
 That listing is diffed against `.github/bundled-plugins.lock`. If it differs,
 the workflow dispatches `publish-server.yml` and commits the new lock; if not,
@@ -47,10 +48,27 @@ Notes:
 
 - The first run finds no lock file, records the baseline and does *not*
   publish. Deleting the lock file resets it the same way.
+- The probe needs credentials for every private repository a bundled plugin
+  lives in: `GH_PACKAGES_READ_TOKEN` for GitHub Packages plus
+  `REPOSILITE_PRIVATE_USER`/`REPOSILITE_PRIVATE_TOKEN` for reposilite's
+  `private` repository. A missing one fails the step instead of silently
+  dropping the module — a skipped module would hide an update.
 - `master` is covered by the `Default` ruleset (merge queue + pull request
   required), and the default `GITHUB_TOKEN` cannot be a ruleset bypass actor.
-  The lock is therefore pushed with an app installation token (see below);
-  everything else in the job keeps `GITHUB_TOKEN`.
+  The lock is therefore pushed with an app installation token (see below).
+- That token has to be handed to `actions/checkout` via `token:` — it is not
+  enough to put it in the push URL. Checkout stores its credential as
+  `http.https://github.com/.extraheader`, which git sends for *every*
+  `https://github.com/` URL and which wins over credentials in the URL, so a
+  push URL carrying the app token still authenticates as `github-actions[bot]`
+  and gets rejected by the ruleset. Hence the token is minted before checkout,
+  unconditionally, and `git push origin` just works. Because the token is now
+  minted on every run, missing or expired `LOCK_PUSH_APP_*` secrets fail the
+  very first step instead of only the runs that found an update.
+- The recording step only runs on `master`. Since the app token bypasses the
+  ruleset, a `workflow_dispatch` from a feature branch would otherwise push
+  that branch's commits to `master` — the probe, the diff and the publish
+  dispatch are branch-safe, the push is not.
 - Unlike `GITHUB_TOKEN`, an app token *does* trigger workflows, so
   `publish-server.yml` ignores pushes that only touch the lock file. Without
   that `paths-ignore` the lock commit would publish a second time on top of the

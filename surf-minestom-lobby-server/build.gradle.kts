@@ -28,12 +28,22 @@ repositories {
             .orElse(providers.environmentVariable("GITHUB_ACTOR"))
         val githubToken = providers.gradleProperty("gpr.key")
             .orElse(providers.environmentVariable("GITHUB_TOKEN"))
+        val reposiliteUser = providers.environmentVariable("REPOSILITE_USER")
+        val reposiliteToken = providers.environmentVariable("REPOSILITE_TOKEN")
 
         if (!githubUser.isPresent || !githubToken.isPresent) {
             logger.warn(
                 "internalPlugins is enabled but GitHub Packages credentials are missing. " +
                         "Set gpr.user/gpr.key in ~/.gradle/gradle.properties " +
                         "(or GITHUB_ACTOR/GITHUB_TOKEN in the environment), " +
+                        "or build with -PinternalPlugins=false."
+            )
+        }
+
+        if (!reposiliteUser.isPresent || !reposiliteToken.isPresent) {
+            logger.warn(
+                "internalPlugins is enabled but private reposilite credentials are missing. " +
+                        "Set REPOSILITE_USER/REPOSILITE_TOKEN in the environment, " +
                         "or build with -PinternalPlugins=false."
             )
         }
@@ -48,8 +58,22 @@ repositories {
                     }
                 }
             }
+            filter { includeGroup("dev.slne.minestom") }
+        }
+
+        exclusiveContent {
+            forRepository {
+                maven("https://reposilite.slne.dev/private") {
+                    name = "slne-repository-private"
+                    credentials {
+                        username = reposiliteUser.orNull
+                        password = reposiliteToken.orNull
+                    }
+                }
+            }
             filter {
-                includeGroup("dev.slne.minestom")
+                val banBypass = libs.surf.ban.bypass.minestom.get().module
+                includeModule(banBypass.group, banBypass.name)
             }
         }
     }
@@ -137,6 +161,7 @@ dependencies {
 
     if (internalPlugins) {
         runtimeOnly(libs.surf.anticheat.minestom) { isTransitive = false }
+        runtimeOnly(libs.surf.ban.bypass.minestom) { isTransitive = false }
     }
 
     testImplementation(libs.minestom.testing)

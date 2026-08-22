@@ -19,12 +19,23 @@ jobs:
     timeout-minutes: 15
     environment: production
     steps:
+      - name: Mint a push token
+        id: push-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.LOCK_PUSH_APP_ID }}
+          private-key: ${{ secrets.LOCK_PUSH_APP_PRIVATE_KEY }}
+
       - uses: actions/checkout@v4
+        with:
+          token: ${{ steps.push-token.outputs.token }}
 
       - name: Probe bundled plugin versions
         shell: bash
         env:
           GH_PACKAGES_READ_TOKEN: ${{ secrets.GH_PACKAGES_READ_TOKEN }}
+          REPOSILITE_USER: ${{ secrets.REPOSILITE_PRIVATE_USER }}
+          REPOSILITE_TOKEN: ${{ secrets.REPOSILITE_PRIVATE_TOKEN }}
         run: bash .github/scripts/bundled-plugin-versions.sh > plugin-versions.new
 
       - name: Compare with the recorded versions
@@ -85,19 +96,9 @@ jobs:
             exit 1
           fi
 
-      - name: Mint a push token
-        id: push-token
-        if: steps.compare.outputs.state != 'unchanged'
-        uses: actions/create-github-app-token@v2
-        with:
-          app-id: ${{ secrets.LOCK_PUSH_APP_ID }}
-          private-key: ${{ secrets.LOCK_PUSH_APP_PRIVATE_KEY }}
-
       - name: Record the current versions
-        if: steps.compare.outputs.state != 'unchanged'
+        if: steps.compare.outputs.state != 'unchanged' && github.ref == 'refs/heads/master'
         shell: bash
-        env:
-          PUSH_TOKEN: ${{ steps.push-token.outputs.token }}
         run: |
           cp plugin-versions.new .github/bundled-plugins.lock
           git config user.name github-actions
@@ -112,4 +113,4 @@ jobs:
           git commit -m '⬆️ chore(deps): record bundled plugin versions'
           git fetch origin master
           git rebase origin/master
-          git push "https://x-access-token:$PUSH_TOKEN@github.com/$GITHUB_REPOSITORY" HEAD:master
+          git push origin HEAD:master

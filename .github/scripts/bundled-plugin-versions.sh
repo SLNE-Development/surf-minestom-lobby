@@ -10,7 +10,8 @@
 # against .github/bundled-plugins.lock to decide whether to rebuild the jar.
 #
 # Reading the internal plugins needs GH_PACKAGES_READ_TOKEN (a token with
-# read:packages), see docs/internal-plugins.md.
+# read:packages) and REPOSILITE_USER/REPOSILITE_TOKEN for the private reposilite
+# repository, see docs/internal-plugins.md.
 set -euo pipefail
 
 repo_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)
@@ -21,6 +22,7 @@ reposilite_repos=(
     https://reposilite.slne.dev/releases
 )
 anticheat_repo=https://maven.pkg.github.com/SLNE-Development/surf-minestom-anticheat
+reposilite_private_repo=https://reposilite.slne.dev/private
 
 die() {
     echo "error: $*" >&2
@@ -73,6 +75,15 @@ while IFS= read -r module; do
     versions=
 
     case $group in
+    dev.slne.surf.bb)
+        [ -n "${REPOSILITE_TOKEN:-}" ] ||
+            die "REPOSILITE_TOKEN is not set, so $module cannot be read from the private reposilite repository (see docs/internal-plugins.md)"
+        versions=$(
+            fetch "$reposilite_private_repo/$path" \
+                -u "${REPOSILITE_USER:-x}:$REPOSILITE_TOKEN" |
+                versions_from_metadata
+        ) || die "cannot read $module from the private reposilite repository - are REPOSILITE_USER/REPOSILITE_TOKEN still valid?"
+        ;;
     dev.slne.minestom*)
         [ -n "${GH_PACKAGES_READ_TOKEN:-}" ] ||
             die "GH_PACKAGES_READ_TOKEN is not set, so $module cannot be read from GitHub Packages (see docs/internal-plugins.md)"

@@ -76,6 +76,7 @@ surf-profile-minestom = { module = "dev.slne.surf.profile:surf-profile-minestom"
 surf-nametag-minestom = { module = "dev.slne.surf.nametag:surf-nametag-minestom", version = "+" }
 surf-trophy-minestom = { module = "dev.slne.surf.trophy:surf-trophy-minestom", version = "+" }
 surf-teleporter-minestom = { module = "dev.slne.surf.teleporter:surf-teleporter-minestom", version = "+" }
+surf-ban-bypass-minestom = { module = "dev.slne.surf.bb:surf-ban-bypass-minestom", version = "+" }
 surf-anticheat-minestom = { module = "dev.slne.minestom:surf-minestom-anticheat", version = "+" }
 
 log4j-api = { module = "org.apache.logging.log4j:log4j-api", version.ref = "log4j" }
