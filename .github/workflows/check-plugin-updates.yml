@@ -85,9 +85,19 @@ jobs:
             exit 1
           fi
 
+      - name: Mint a push token
+        id: push-token
+        if: steps.compare.outputs.state != 'unchanged'
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.LOCK_PUSH_APP_ID }}
+          private-key: ${{ secrets.LOCK_PUSH_APP_PRIVATE_KEY }}
+
       - name: Record the current versions
         if: steps.compare.outputs.state != 'unchanged'
         shell: bash
+        env:
+          PUSH_TOKEN: ${{ steps.push-token.outputs.token }}
         run: |
           cp plugin-versions.new .github/bundled-plugins.lock
           git config user.name github-actions
@@ -102,4 +112,4 @@ jobs:
           git commit -m '⬆️ chore(deps): record bundled plugin versions'
           git fetch origin master
           git rebase origin/master
-          git push origin HEAD:master
+          git push "https://x-access-token:$PUSH_TOKEN@github.com/$GITHUB_REPOSITORY" HEAD:master

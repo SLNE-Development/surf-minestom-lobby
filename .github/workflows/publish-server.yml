@@ -3,6 +3,8 @@ name: Publish server jar
 on:
   push:
     branches: [ master ]
+    paths-ignore:
+      - .github/bundled-plugins.lock
   workflow_dispatch:
 
 concurrency:

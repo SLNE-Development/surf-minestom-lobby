@@ -47,10 +47,14 @@ Notes:
 
 - The first run finds no lock file, records the baseline and does *not*
   publish. Deleting the lock file resets it the same way.
-- The lock is pushed with the default `GITHUB_TOKEN`, whose pushes do not
-  trigger workflows — that is what keeps the commit from setting off the
-  push-triggered publish on top of the dispatched one. Giving `actions/checkout`
-  a PAT would publish twice.
+- `master` is covered by the `Default` ruleset (merge queue + pull request
+  required), and the default `GITHUB_TOKEN` cannot be a ruleset bypass actor.
+  The lock is therefore pushed with an app installation token (see below);
+  everything else in the job keeps `GITHUB_TOKEN`.
+- Unlike `GITHUB_TOKEN`, an app token *does* trigger workflows, so
+  `publish-server.yml` ignores pushes that only touch the lock file. Without
+  that `paths-ignore` the lock commit would publish a second time on top of the
+  dispatched run — and even bootstrap runs would publish.
 - The publish is dispatched before the lock is committed, so a failed push
   costs a duplicate publish tomorrow rather than a missed update. A failed
   *publish* is not retried automatically — the lock already moved on, so rerun
@@ -66,20 +70,28 @@ Notes:
 - Reposilite: a `private` repository, plus two access tokens — one with write
   access for CI, one read-only for the egg.
 - GitHub Actions secrets (repo is public — secrets are not exposed to fork PRs):
+  Both jobs run on the `production` environment, so environment-scoped secrets
+  work; repository-level ones do too.
+
   - `GH_PACKAGES_READ_TOKEN`: PAT with `read:packages` for the private
     internal-plugin repositories (see docs/internal-plugins.md). The update
     check needs it too — an expired token fails that workflow with a message
-    naming the secret. It has to be readable **at repository level**: unlike
-    the publish job, the check job declares no `environment`, so a secret
-    scoped to `production` alone would arrive empty. Adding
-    `environment: production` to the check job works too, but then any
-    protection rule on that environment stalls the scheduled run.
+    naming the secret.
   - `REPOSILITE_PRIVATE_USER` / `REPOSILITE_PRIVATE_TOKEN`: the CI write token.
+  - `LOCK_PUSH_APP_ID` / `LOCK_PUSH_APP_PRIVATE_KEY`: the app that may push the
+    lock file to `master` (see below).
 - Self-hosted runner with bash, git and curl; JDK 25 comes from `setup-java`.
-- The runner's git must be able to commit non-interactively: with
-  `commit.gpgsign=true` the lock file commit dies on an invisible pinentry
-  prompt, so set `commit.gpgsign false` for the account the runner uses.
-- `master` must accept pushes from `github-actions` for the lock file commit.
+- A GitHub App for the lock file push, because the `Default` ruleset blocks
+  direct pushes to `master` and `GITHUB_TOKEN` cannot bypass it:
+  - the app only needs repository permission `Contents: Read and write`, and
+    must be installed on this repository;
+  - add it to the bypass list of the `Default` ruleset (Settings → Rules →
+    Rulesets → Default). It only shows up in the picker once installed.
+
+  A bot account added to the team that already has bypass access works too —
+  then swap the app-token step for that account's PAT. Adding the
+  `github-actions` app itself is not possible; its token is not branch-scoped,
+  so GitHub does not allow it as a bypass actor.
 - Pterodactyl egg variables: `INTERNAL_PLUGINS` (default `true`),
   `MAVEN_REPO_USER` / `MAVEN_REPO_TOKEN` (the read token, only needed with
   internal plugins) and `LOBBY_VERSION` (default `latest`).
