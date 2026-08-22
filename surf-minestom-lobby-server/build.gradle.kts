@@ -58,7 +58,7 @@ repositories {
                     }
                 }
             }
-            filter { includeGroup("dev.slne.minestom") }
+            filter { includeGroup(libs.surf.anticheat.minestom.get().group) }
         }
 
         exclusiveContent {
@@ -72,8 +72,7 @@ repositories {
                 }
             }
             filter {
-                val banBypass = libs.surf.ban.bypass.minestom.get().module
-                includeModule(banBypass.group, banBypass.name)
+                includeGroup(libs.surf.ban.bypass.minestom.get().group)
             }
         }
     }
