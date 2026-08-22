@@ -14,3 +14,9 @@ logs/
 # absolute paths). config.toml is shared atlas policy and stays tracked.
 /.projectatlas/*
 !/.projectatlas/config.toml
+
+# Scratch files of .github/workflows/check-plugin-updates.yml
+/plugin-versions.new
+/plugin-versions.old
+/plugin-versions.diff
+/dispatch.out
