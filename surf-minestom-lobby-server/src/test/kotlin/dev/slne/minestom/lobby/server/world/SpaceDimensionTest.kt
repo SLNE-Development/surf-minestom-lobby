@@ -25,6 +25,6 @@ class SpaceDimensionTest {
         assertEquals(AlphaColor.TRANSPARENT, attributes[EnvironmentAttribute.SUNRISE_SUNSET_COLOR]?.argument())
         assertEquals(1.0f, attributes[EnvironmentAttribute.STAR_BRIGHTNESS]?.argument())
         assertEquals(0.05f, attributes[EnvironmentAttribute.SKY_LIGHT_FACTOR]?.argument())
-        assertEquals(0, dimension.timelines().entries().size)
+        assertEquals(0, dimension.timelines().size())
     }
 }
