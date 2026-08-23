@@ -51,7 +51,7 @@ internal fun buildSpaceDimensionType(overworld: DimensionType): DimensionType = 
     .ambientLight(0.12f)
     .build()
 
-private fun registerSpaceTimeline(): RegistryKey<Timeline> {
+internal fun registerSpaceTimeline(): RegistryKey<Timeline> {
     fun <T> constantTrack(
         attribute: EnvironmentAttribute<T>,
         value: T,
