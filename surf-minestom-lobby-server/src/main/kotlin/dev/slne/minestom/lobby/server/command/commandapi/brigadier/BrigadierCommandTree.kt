@@ -50,8 +50,12 @@ internal class BrigadierCommandTree(
 
     private val entries = Object2ObjectLinkedOpenHashMap<String, Entry>()
 
+    @Volatile
     var dispatcher = CommandDispatcher<CommandSender>()
         private set
+
+    @Volatile
+    private var registeredSnapshot: List<Pair<List<String>, CommandDefinition>> = emptyList()
 
     fun register(key: String, labels: Collection<String>, definition: CommandDefinition) {
         entries[key] = Entry(ObjectArrayList(labels), definition)
@@ -68,8 +72,7 @@ internal class BrigadierCommandTree(
     }
 
     /** Every registered command, paired with the labels it answers to. */
-    fun registered(): List<Pair<List<String>, CommandDefinition>> =
-        entries.values.map { entry -> entry.labels to entry.definition }
+    fun registered(): List<Pair<List<String>, CommandDefinition>> = registeredSnapshot
 
     private fun rebuild() {
         val rebuilt = CommandDispatcher<CommandSender>()
@@ -78,6 +81,8 @@ internal class BrigadierCommandTree(
                 rebuilt.register(literalFor(label, entry.definition))
             }
         }
+
+        registeredSnapshot = entries.values.map { entry -> entry.labels to entry.definition }
         dispatcher = rebuilt
     }
 

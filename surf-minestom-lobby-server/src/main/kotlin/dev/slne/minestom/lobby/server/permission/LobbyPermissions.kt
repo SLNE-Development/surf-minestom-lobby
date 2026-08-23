@@ -22,7 +22,9 @@ object LobbyPermissions {
     private const val OP_PREFIX = "$PREFIX.op"
     private const val GAMEMODE_SWITCHER_PREFIX = "$PREFIX.gamemode-switcher."
 
-    fun opLevel(level: Int): String = "$OP_PREFIX.$level"
+    private val OP_LEVELS: Array<String> = Array(MAX_OP_LEVEL + 1) { level -> "$OP_PREFIX.$level" }
+
+    fun opLevel(level: Int): String = OP_LEVELS.getOrElse(level) { "$OP_PREFIX.$level" }
 
     fun gamemodeSwitcher(gameMode: GameMode): String =
         "$GAMEMODE_SWITCHER_PREFIX${gameMode.name.lowercase()}"

@@ -6,31 +6,52 @@ import net.minestom.server.crypto.MessageSignature
 
 class MessageSignatureCache(capacity: Int = DEFAULT_CAPACITY) {
 
-    private val entries = arrayOfNulls<MessageSignature>(capacity)
+    private class Entry(val signature: MessageSignature) {
+        val hash = signature.hashCode()
+
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other !is Entry) return false
+
+            if (hash != other.hash) return false
+            if (signature != other.signature) return false
+
+            return true
+        }
+
+        override fun hashCode(): Int {
+            return hash
+        }
+    }
+
+    private val entries = arrayOfNulls<Entry>(capacity)
 
     fun pack(signature: MessageSignature): Int {
+        val hash = signature.hashCode()
+
         for (index in entries.indices) {
-            if (signature == entries[index]) return index
+            val entry = entries[index] ?: continue
+            if (entry.hash == hash && entry.signature == signature) return index
         }
 
         return NOT_FOUND
     }
 
-    fun unpack(id: Int): MessageSignature? = entries[id]
+    fun unpack(id: Int): MessageSignature? = entries[id]?.signature
 
     fun push(body: SignedMessageBody, signature: MessageSignature?) {
         val lastSeen = body.lastSeen.entries
-        val queue = ArrayDeque<MessageSignature>(lastSeen.size + 1)
-        queue.addAll(lastSeen)
+        val queue = ArrayDeque<Entry>(lastSeen.size + 1)
+        lastSeen.forEach { entry -> queue.addLast(Entry(entry)) }
 
         if (signature != null) {
-            queue.addLast(signature)
+            queue.addLast(Entry(signature))
         }
 
         push(queue)
     }
 
-    private fun push(queue: ArrayDeque<MessageSignature>) {
+    private fun push(queue: ArrayDeque<Entry>) {
         val newEntries = ObjectOpenHashSet(queue)
 
         var index = 0

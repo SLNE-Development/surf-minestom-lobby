@@ -3,12 +3,12 @@ package dev.slne.minestom.lobby.server.command.commandapi.brigadier
 import dev.slne.minestom.lobby.api.command.commandapi.argument.ArgumentDefinition
 import dev.slne.minestom.lobby.api.command.commandapi.argument.ArgumentKind
 import dev.slne.minestom.lobby.api.command.commandapi.argument.SuggestionMode
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap
 import net.minestom.server.command.ArgumentParserType
 import net.minestom.server.command.builder.arguments.Argument
 import net.minestom.server.command.builder.arguments.ArgumentType
 import net.minestom.server.command.builder.arguments.minecraft.SuggestionType
 import net.minestom.server.registry.BuiltinRegistries
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * How one argument is announced to the client: the vanilla parser id it should use, the parser's own
@@ -46,9 +46,9 @@ internal data class NodeDeclaration(
  * name their vanilla parser directly.
  */
 internal class NodeDeclarations {
-    private val cache = Object2ObjectOpenHashMap<ArgumentDefinition<*>, NodeDeclaration>()
+    private val cache = ConcurrentHashMap<ArgumentDefinition<*>, NodeDeclaration>()
 
-    fun of(definition: ArgumentDefinition<*>): NodeDeclaration = cache.getOrPut(definition) {
+    fun of(definition: ArgumentDefinition<*>): NodeDeclaration = cache.computeIfAbsent(definition) {
         val base = baseDeclarationOf(definition)
         val server = definition.suggestions != SuggestionMode.BuiltIns ||
                 computesSuggestions(definition.kind)

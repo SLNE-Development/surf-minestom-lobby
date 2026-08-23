@@ -20,6 +20,8 @@ class ChatMessageChain(private val scope: CoroutineScope) : AutoCloseable {
     private var closed = false
 
     fun append(task: suspend () -> Unit) {
+        if (closed) return
+
         synchronized(lock) {
             val previous = head
 
