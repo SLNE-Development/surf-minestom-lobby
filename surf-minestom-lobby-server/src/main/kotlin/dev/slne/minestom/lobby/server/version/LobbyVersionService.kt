@@ -6,6 +6,7 @@ import dev.slne.minestom.lobby.api.coroutine.MinestomDispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import org.jetbrains.annotations.TestOnly
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.TimeSource
 
@@ -16,15 +17,16 @@ private val CACHE_DURATION = 15.minutes
  * [CACHE_DURATION].
  */
 @Singleton
-class LobbyVersionService @Inject constructor() {
+class LobbyVersionService @TestOnly internal constructor(val buildInfo: LobbyBuildInfo) {
+
+    @Inject
+    constructor() : this(LobbyBuildInfo.current)
 
     private val fetcher = PublishedBuildFetcher()
     private val mutex = Mutex()
 
     private var cached: LobbyVersionStatus? = null
     private var cachedAt: TimeSource.Monotonic.ValueTimeMark? = null
-
-    val buildInfo: LobbyBuildInfo get() = LobbyBuildInfo.current
 
     suspend fun status(): LobbyVersionStatus {
         val buildNumber = buildInfo.buildNumber ?: return LobbyVersionStatus.DevelopmentBuild

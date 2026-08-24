@@ -1,5 +1,6 @@
 package dev.slne.minestom.lobby.server.version
 
+import com.google.inject.Guice
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -81,9 +82,28 @@ class PublishedBuildFetcherTest {
 
     @Test
     fun `a jar without a build number is a development build`() = runTest {
-        // Tests run against the generated resource of a local build, which carries no build
-        // number, so the service must answer without reaching for the network.
-        assertEquals(LobbyVersionStatus.DevelopmentBuild, LobbyVersionService().status())
+        // A local build carries no build number, while CI bakes one in - so the build info is
+        // stated here instead of read from the jar, and no test ever reaches for the network.
+        val service = LobbyVersionService(
+            LobbyBuildInfo(
+                version = "1.0.0-SNAPSHOT",
+                commit = OLDER_COMMIT,
+                branch = "master",
+                commitTime = null,
+                buildNumber = null,
+            )
+        )
+
+        assertEquals(LobbyVersionStatus.DevelopmentBuild, service.status())
+    }
+
+    @Test
+    fun `guice constructs the service from the jar's build info`() {
+        // The service carries a second constructor for tests, so the injected one has to stay
+        // the one Guice picks - the server does not start otherwise.
+        val service = Guice.createInjector().getInstance(LobbyVersionService::class.java)
+
+        assertEquals(LobbyBuildInfo.current, service.buildInfo)
     }
 
     private fun assertBehind(status: LobbyVersionStatus): LobbyVersionStatus.Behind {
