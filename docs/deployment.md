@@ -114,6 +114,32 @@ Notes:
   `MAVEN_REPO_USER` / `MAVEN_REPO_TOKEN` (the read token, only needed with
   internal plugins) and `LOBBY_VERSION` (default `latest`).
 
+## Build identity and the update check
+
+`:surf-minestom-lobby-server:generateBuildInfo` bakes
+`surf-minestom-lobby-build.properties` into the jar: the project version, the
+commit, the branch, the commit timestamp and — only in CI — `GITHUB_RUN_NUMBER`
+as the build number. Locally the build number is empty, which is what marks a
+jar as a development build. Nothing is read from the wall clock, so a rebuild
+without a new commit does not invalidate the shadow jar.
+
+`/version` (aliases `ver`, `about`, permission
+`minestom.lobby.command.version`) prints that identity plus how many builds the
+server is behind, and the same two lines are logged once after startup.
+
+The distance is read from the GitHub Actions API: the successful
+`publish-server.yml` runs on `master`, counting those whose run number is higher
+than ours. Counting *successful runs* rather than subtracting run numbers is
+what makes the number a build count — a failed run consumes a run number
+without publishing a jar. It also covers the plugin-only republishes above,
+which a commit-distance check (what Paper does) would report as "up to date"
+even though the jar is stale.
+
+The check is unauthenticated (60 requests/hour per IP), cached for 15 minutes,
+and never fails a command or the startup — a timeout or an HTTP error is
+reported as a failed check. Only the newest 100 published builds are inspected;
+past that the count is reported as a lower bound.
+
 ## Versioning
 
 Currently every master push publishes `1.0.0-SNAPSHOT`; reposilite keeps

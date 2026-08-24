@@ -8,14 +8,8 @@ import dev.slne.minestom.lobby.api.player.LobbyPlayer
 import dev.slne.minestom.lobby.server.command.commandapi.MinestomCommandAPIPlatform
 import dev.slne.minestom.lobby.server.command.commandapi.MinestomCommandOwnership
 import dev.slne.minestom.lobby.server.command.commandapi.runCommand
-import dev.slne.minestom.lobby.server.command.impl.difficultyCommand
-import dev.slne.minestom.lobby.server.command.impl.gamemodeCommand
-import dev.slne.minestom.lobby.server.command.impl.kickCommand
-import dev.slne.minestom.lobby.server.command.impl.killCommand
-import dev.slne.minestom.lobby.server.command.impl.listPlayersCommand
-import dev.slne.minestom.lobby.server.command.impl.stopCommand
-import java.util.UUID
-import java.util.concurrent.CompletableFuture
+import dev.slne.minestom.lobby.server.command.impl.*
+import dev.slne.minestom.lobby.server.version.LobbyVersionService
 import net.kyori.adventure.chat.SignedMessage
 import net.kyori.adventure.text.Component
 import net.minestom.server.command.CommandManager
@@ -29,12 +23,13 @@ import net.minestom.server.network.player.PlayerConnection
 import net.minestom.testing.Env
 import net.minestom.testing.EnvTest
 import net.minestom.testing.TestConnection
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
+import java.util.*
+import java.util.concurrent.CompletableFuture
 
-private val DEFAULT_COMMAND_NAMES = listOf("gamemode", "kill", "list", "kick", "difficulty", "stop")
+private val DEFAULT_COMMAND_NAMES =
+    listOf("gamemode", "kill", "list", "kick", "difficulty", "stop", "version")
 
 @EnvTest
 class DefaultCommandsRegistrationTest {
@@ -47,6 +42,7 @@ class DefaultCommandsRegistrationTest {
                 assertTrue(ownership.ownsInput(name), "'$name' was not registered")
             }
             assertTrue(ownership.ownsInput("gm"), "the gamemode alias was not registered")
+            assertTrue(ownership.ownsInput("ver"), "the version alias was not registered")
         }
 
     @Test
@@ -62,7 +58,10 @@ class DefaultCommandsRegistrationTest {
                 // An ordinary player holds no lobby permission, so every default command is
                 // invisible to it and its input cannot resolve.
                 DEFAULT_COMMAND_NAMES.forEach { name ->
-                    assertFalse(runCommand(player, name), "'$name' was reachable without permission")
+                    assertFalse(
+                        runCommand(player, name),
+                        "'$name' was reachable without permission"
+                    )
                 }
                 assertTrue(runCommand(manager.consoleSender, "list"), "the console was denied")
             } finally {
@@ -122,6 +121,7 @@ class DefaultCommandsRegistrationTest {
         kickCommand()
         difficultyCommand()
         stopCommand(Provider { error("The stop command must not run during registration") })
+        versionCommand(LobbyVersionService())
     }
 
     private fun withPlatform(env: Env, block: (CommandManager, MinestomCommandOwnership) -> Unit) {

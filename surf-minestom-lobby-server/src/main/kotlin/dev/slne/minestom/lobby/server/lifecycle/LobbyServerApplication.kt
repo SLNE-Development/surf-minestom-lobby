@@ -5,6 +5,8 @@ import com.google.inject.Singleton
 import dev.slne.minestom.lobby.server.config.ServerConfig
 import dev.slne.minestom.lobby.server.console.LobbyTerminalConsole
 import dev.slne.minestom.lobby.server.plugin.MinestomPluginManager
+import dev.slne.minestom.lobby.server.version.LobbyVersionService
+import dev.slne.minestom.lobby.server.version.logVersionBanner
 import kotlinx.coroutines.runBlocking
 import net.minestom.server.MinecraftServer
 import net.minestom.server.MinecraftServer.LOGGER
@@ -21,6 +23,7 @@ class LobbyServerApplication @Inject constructor(
     private val config: ServerConfig,
     private val serverLifecycle: ServerLifecycle,
     private val pluginManager: MinestomPluginManager,
+    private val versionService: LobbyVersionService,
 ) {
     private val started = AtomicBoolean()
     private val stopped = AtomicBoolean()
@@ -59,6 +62,8 @@ class LobbyServerApplication @Inject constructor(
                 "Surf Minestom Lobby is ready in {}.",
                 startupDuration,
             )
+
+            logVersionBanner(versionService, LOGGER)
         } catch (startupFailure: Throwable) {
             LOGGER.error(
                 "Failed to start Surf Minestom Lobby.",
