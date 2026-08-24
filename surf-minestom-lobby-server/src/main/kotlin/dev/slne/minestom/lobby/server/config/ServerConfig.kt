@@ -13,6 +13,10 @@ data class ServerConfig(
     @Setting("address")
     val address: AddressConfig = AddressConfig(),
 
+    @Setting("max-players")
+    @Comment("Number of players that may be connected at once.")
+    val maxPlayers: Int = 100,
+
     @Setting("spawn")
     val spawn: ConfigPosition = ConfigPosition(),
 

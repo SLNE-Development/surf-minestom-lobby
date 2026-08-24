@@ -1,7 +1,9 @@
 package dev.slne.minestom.lobby.server.player.config
 
 import dev.slne.minestom.lobby.api.extension.ConnectionManager
+import dev.slne.minestom.lobby.api.player.requireLobbyPlayer
 import dev.slne.minestom.lobby.server.duck.ConnectionManagerDuck
+import dev.slne.minestom.lobby.server.player.PlayerLoginGate
 import it.unimi.dsi.fastutil.objects.ObjectImmutableList
 import net.minestom.server.MinecraftServer
 import net.minestom.server.ServerFlag
@@ -16,8 +18,12 @@ object LobbyConfiguration {
     @Volatile
     private var tasks: List<ConfigurationTask> = emptyList()
 
-    fun install(tasks: List<ConfigurationTask>) {
+    @Volatile
+    private lateinit var loginGate: PlayerLoginGate
+
+    fun install(tasks: List<ConfigurationTask>, loginGate: PlayerLoginGate) {
         this.tasks = ObjectImmutableList(tasks)
+        this.loginGate = loginGate
     }
 
     @Blocking
@@ -31,6 +37,8 @@ object LobbyConfiguration {
 
             player.refreshKeepAlive(System.nanoTime())
             player.refreshAnswerKeepAlive(true)
+
+            if (!loginGate.admit(player.requireLobbyPlayer())) return
         }
 
         player.sendPacket(PluginMessagePacket.brandPacket(MinecraftServer.getBrandName()))

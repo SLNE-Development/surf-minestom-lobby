@@ -9,6 +9,7 @@ import dev.slne.minestom.lobby.server.player.config.*
 @Singleton
 class LobbyPlayerService @Inject constructor(
     private val playerFactory: LobbyPlayerFactory,
+    private val loginGate: PlayerLoginGate,
     private val enabledFeatures: EnabledFeaturesTask,
     private val synchronizeRegistries: SynchronizeRegistriesTask,
     private val awaitSettings: AwaitSettingsTask,
@@ -28,7 +29,8 @@ class LobbyPlayerService @Inject constructor(
                 codeOfConduct,
                 resourcePack,
                 joinWorld,
-            )
+            ),
+            loginGate,
         )
     }
 }
