@@ -104,6 +104,7 @@ dependencies {
     implementation(libs.slf4j.api)
     implementation(libs.terminal.console.appender)
     runtimeDownload(libs.fastutil)
+    compileOnly(libs.flare.fastutil) // Provided by minestom
     runtimeDownload(libs.polar)
     runtimeDownload(libs.npc)
     runtimeDownload(libs.brigadier)
@@ -164,6 +165,7 @@ dependencies {
     }
 
     testImplementation(libs.minestom.testing)
+    testImplementation(libs.flare.fastutil)
     testImplementation(libs.npc)
     testImplementation(libs.guice)
     testImplementation(libs.mini.placeholders.minestom) { isTransitive = false }
