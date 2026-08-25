@@ -9,7 +9,9 @@
     "EntityTickMixin",
     "EntityTrackerEntryMixin",
     "EntityTrackerMixin",
-    "PlayerSocketConnectionMixin"
+    "InteractionControllerMixin",
+    "PlayerSocketConnectionMixin",
+    "TextDisplayControllerMixin"
   ],
   "injectors": {
     "defaultRequire": 1
