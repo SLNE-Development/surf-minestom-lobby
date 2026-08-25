@@ -178,6 +178,14 @@ class LobbyPlayerImpl @AssistedInject constructor(
     public override fun refreshAbilities() {
         super.refreshAbilities()
     }
+
+    override fun setGameMode(gameMode: GameMode): Boolean {
+        val previousGameMode = getGameMode()
+        if (!super.setGameMode(gameMode)) return false
+
+        completeGameModeSwitch(previousGameMode)
+        return true
+    }
 }
 
 private fun PlayerInfoUpdatePacket.Entry.withChatSession(session: ChatSession) =
