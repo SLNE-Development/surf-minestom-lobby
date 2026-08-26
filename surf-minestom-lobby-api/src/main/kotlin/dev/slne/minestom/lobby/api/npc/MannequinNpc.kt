@@ -1,5 +1,6 @@
 package dev.slne.minestom.lobby.api.npc
 
+import codes.bed.minestom.npc.StomNPCs
 import codes.bed.minestom.npc.api.NameDisplayMode
 import codes.bed.minestom.npc.api.NpcKind
 import codes.bed.minestom.npc.display.TextDisplayController
@@ -54,6 +55,14 @@ class MannequinNpc(
     override val kind: NpcKind get() = NpcKind.MANNEQUIN
 
     override val displayName: String get() = name
+
+    @ApiStatus.Internal
+    override fun spawn() {
+        StomNPCs.manager().register(this)
+
+        val instance = instance ?: return
+        scheduler().scheduleNextTick { textDisplayController?.attachTo(this, instance) }
+    }
 
     /**
      * Replaces the hologram text shown above the NPC.

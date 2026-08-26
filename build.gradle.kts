@@ -1,3 +1,5 @@
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
+
 plugins {
     alias(libs.plugins.kotlin.jvm) apply false
     alias(libs.plugins.shadow) apply false
@@ -11,5 +13,10 @@ allprojects {
 subprojects {
     tasks.withType<Test>().configureEach {
         useJUnitPlatform()
+        testLogging {
+            exceptionFormat = TestExceptionFormat.FULL
+            showStackTraces = true
+            showCauses = true
+        }
     }
 }
