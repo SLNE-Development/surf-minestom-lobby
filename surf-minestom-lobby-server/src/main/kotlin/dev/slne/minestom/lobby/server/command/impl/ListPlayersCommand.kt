@@ -21,10 +21,7 @@ fun listPlayersCommand() = commandAPICommand("list") {
             JoinConfiguration.commas(true),
             players.map { player ->
                 text()
-                    .append(
-                        player.displayName?.colorIfAbsent(NamedTextColor.GOLD)
-                            ?: text(player.username, NamedTextColor.GOLD)
-                    )
+                    .append(text(player.username, NamedTextColor.GOLD))
                     .hoverEvent(text("UUID: ${player.uuid}", NamedTextColor.GRAY))
                     .clickEvent(ClickEvent.copyToClipboard(player.uuid.toString()))
                     .insertion(player.username)
