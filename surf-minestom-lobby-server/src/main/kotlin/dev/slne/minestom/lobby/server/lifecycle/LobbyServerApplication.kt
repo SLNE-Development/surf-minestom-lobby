@@ -7,6 +7,7 @@ import dev.slne.minestom.lobby.server.console.LobbyTerminalConsole
 import dev.slne.minestom.lobby.server.plugin.MinestomPluginManager
 import dev.slne.minestom.lobby.server.version.LobbyVersionService
 import dev.slne.minestom.lobby.server.version.logVersionBanner
+import dev.slne.minestom.lobby.server.world.LobbyWorldService
 import kotlinx.coroutines.runBlocking
 import net.minestom.server.MinecraftServer
 import net.minestom.server.MinecraftServer.LOGGER
@@ -24,6 +25,7 @@ class LobbyServerApplication @Inject constructor(
     private val serverLifecycle: ServerLifecycle,
     private val pluginManager: MinestomPluginManager,
     private val versionService: LobbyVersionService,
+    private val worldService: LobbyWorldService,
 ) {
     private val started = AtomicBoolean()
     private val stopped = AtomicBoolean()
@@ -43,6 +45,10 @@ class LobbyServerApplication @Inject constructor(
             LOGGER.info("Starting server plugins.")
             pluginManager.startAll()
             LOGGER.info("Server plugins started.")
+
+            LOGGER.info("Warming chunk packets.")
+            worldService.warmChunkPackets()
+            LOGGER.info("Chunk packets warmed.")
 
             installShutdownHook()
 

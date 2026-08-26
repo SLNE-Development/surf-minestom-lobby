@@ -64,7 +64,11 @@ object LobbyServerBootstrap {
             config.address.port,
         )
 
-        return MinecraftServer.init(config.createAuth())
+        val minecraftServer = MinecraftServer.init(config.createAuth())
+
+        applyBackendCompressionThreshold()
+
+        return minecraftServer
     }
 
     private fun discoverPlugins(): PluginCatalog {

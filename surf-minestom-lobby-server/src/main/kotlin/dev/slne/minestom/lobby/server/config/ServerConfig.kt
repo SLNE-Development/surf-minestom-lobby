@@ -21,7 +21,7 @@ data class ServerConfig(
     val spawn: ConfigPosition = ConfigPosition(),
 
     @Setting("force-load")
-    @Comment("Whether the server should load chunks in the force-load range.")
+    @Comment("Chunks the server loads and prepares for sending before it accepts players.")
     val forceLoad: ForceLoadConfig = ForceLoadConfig(),
 
     val defaultGameMode: GameMode = GameMode.SURVIVAL,
@@ -61,10 +61,16 @@ data class ServerConfig(
     data class ForceLoadConfig(
         val enabled: Boolean = true,
 
-        @Comment("The first corner of the force-load range. The range is inclusive.")
+        @Comment(
+            "One corner of the playable area, in chunk coordinates. " +
+                    "The corners are inclusive and may be given in any order. " +
+                    "The server loads and prepares this area grown by the chunk view distance, " +
+                    "so a player standing anywhere inside it never looks at a chunk that has not " +
+                    "been prepared."
+        )
         val from: Chunk = Chunk(0, 0),
 
-        @Comment("The opposite corner of the force-load range. The range is inclusive.")
+        @Comment("The opposite corner of the playable area, in chunk coordinates.")
         val to: Chunk = Chunk(0, 0),
     ) {
         @ConfigSerializable

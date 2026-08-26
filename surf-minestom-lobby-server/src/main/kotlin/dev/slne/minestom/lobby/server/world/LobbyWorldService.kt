@@ -12,15 +12,22 @@ import dev.slne.minestom.lobby.server.lifecycle.LobbyService
 import dev.slne.minestom.lobby.server.world.block.LobbyBlockHandlers
 import dev.slne.minestom.lobby.server.world.entity.PolarPaperWorldAccess
 import it.unimi.dsi.fastutil.objects.ObjectArrayList
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.future.await
+import kotlinx.coroutines.withContext
 import net.hollowcube.polar.PolarLoader
 import net.hollowcube.polar.PolarReader
 import net.minestom.server.MinecraftServer
+import net.minestom.server.ServerFlag
 import net.minestom.server.instance.Chunk
 import net.minestom.server.instance.InstanceContainer
 import net.minestom.server.instance.LightingChunk
 import net.minestom.server.world.DimensionType
 import java.util.concurrent.CompletableFuture
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.nanoseconds
 
 @Singleton
 class LobbyWorldService @Inject constructor(
@@ -29,6 +36,9 @@ class LobbyWorldService @Inject constructor(
 ) : LobbyService {
 
     private var container: InstanceContainer? = null
+
+    @Volatile
+    private var requiredChunks: ChunkRegion? = null
 
     val instance: InstanceContainer
         get() = checkNotNull(container) {
@@ -59,34 +69,72 @@ class LobbyWorldService @Inject constructor(
 
         val forceLoad = config.forceLoad
         if (forceLoad.enabled) {
-            forceLoadChunks(instance, forceLoad)
+            val required = forceLoad.requiredChunks(instance.viewDistance())
+            requiredChunks = required
+
+            forceLoadChunks(instance, forceLoad.chunkRegion(), required)
+        }
+    }
+
+    suspend fun warmChunkPackets() {
+        val required = requiredChunks ?: return
+        val instance = this.instance
+
+        if (!ServerFlag.CACHED_PACKET) {
+            MinecraftServer.LOGGER.info("Packet caching is disabled, skipping the chunk packet warmup.")
+            return
+        }
+
+        val chunks = ObjectArrayList<Chunk>(required.chunkCount.toInt())
+        required.forEach { chunkX, chunkZ ->
+            instance.getChunk(chunkX, chunkZ)?.let(chunks::add)
+        }
+
+        MinecraftServer.LOGGER.info("Warming the chunk packets of {} chunks.", chunks.size)
+
+        val startedAt = System.nanoTime()
+
+        val warmed = withContext(Dispatchers.Default) {
+            chunks
+                .map { chunk -> async { chunk.warmFullDataPacket() } }
+                .awaitAll()
+        }.count { it }
+
+        val duration = (System.nanoTime() - startedAt).nanoseconds.inWholeMilliseconds.milliseconds
+
+        MinecraftServer.LOGGER.info(
+            "Warmed the chunk packets of {} chunks in {}.",
+            warmed,
+            duration,
+        )
+
+        if (warmed.toLong() != required.chunkCount) {
+            MinecraftServer.LOGGER.warn(
+                "Only {} of the {} chunks {} are warm; the rest are not loaded.",
+                warmed,
+                required.chunkCount,
+                required,
+            )
         }
     }
 
     private suspend fun forceLoadChunks(
         instance: InstanceContainer,
-        config: ServerConfig.ForceLoadConfig,
+        playableArea: ChunkRegion,
+        required: ChunkRegion,
     ) {
-        val minChunkX = minOf(config.from.x, config.to.x)
-        val maxChunkX = maxOf(config.from.x, config.to.x)
-        val minChunkZ = minOf(config.from.z, config.to.z)
-        val maxChunkZ = maxOf(config.from.z, config.to.z)
-
-        val chunkCount = (maxChunkX - minChunkX + 1L) * (maxChunkZ - minChunkZ + 1L)
-
         MinecraftServer.LOGGER.info(
-            "Force-loading {} chunks from {} to {}.",
-            chunkCount,
-            config.from,
-            config.to,
+            "Force-loading {} chunks {} - the playable area {} plus {} chunks of view distance.",
+            required.chunkCount,
+            required,
+            playableArea,
+            instance.viewDistance() + 1,
         )
 
-        val loads = ObjectArrayList<CompletableFuture<Chunk>>(chunkCount.toInt())
+        val loads = ObjectArrayList<CompletableFuture<Chunk>>(required.chunkCount.toInt())
 
-        for (chunkX in minChunkX..maxChunkX) {
-            for (chunkZ in minChunkZ..maxChunkZ) {
-                loads += instance.loadChunk(chunkX, chunkZ)
-            }
+        required.forEach { chunkX, chunkZ ->
+            loads += instance.loadChunk(chunkX, chunkZ)
         }
 
         CompletableFuture
