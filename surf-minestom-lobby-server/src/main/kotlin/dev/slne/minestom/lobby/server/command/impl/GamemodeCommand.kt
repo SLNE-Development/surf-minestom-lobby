@@ -2,7 +2,7 @@ package dev.slne.minestom.lobby.server.command.impl
 
 import dev.slne.minestom.lobby.api.command.commandapi.dsl.*
 import dev.slne.minestom.lobby.server.permission.LobbyPermissions
-import dev.slne.surf.api.core.messages.adventure.buildText
+import dev.slne.surf.api.core.messages.adventure.sendText
 import net.kyori.adventure.text.Component.text
 import net.kyori.adventure.text.format.NamedTextColor
 import net.minestom.server.command.CommandSender
@@ -34,24 +34,24 @@ private fun applyGameMode(sender: CommandSender, gameMode: GameMode, targets: Li
         player.scheduleNextTick { player.gameMode = gameMode }
 
         if (!selfExecution) {
-            player.sendMessage(buildText {
+            player.sendText {
                 appendSuccessPrefix()
                 success("Dein Spielmodus wurde auf ")
                 append(displayMode)
                 success(" gesetzt.")
-            })
+            }
         }
     }
 
     if (selfExecution) {
-        sender.sendMessage(buildText {
+        sender.sendText {
             appendSuccessPrefix()
             success("Dein Spielmodus wurde auf ")
             append(displayMode)
             success(" gesetzt.")
-        })
+        }
     } else {
-        sender.sendMessage(buildText {
+        sender.sendText {
             appendSuccessPrefix()
             success("Der Spielmodus von ")
             if (targets.size == 1) {
@@ -63,7 +63,7 @@ private fun applyGameMode(sender: CommandSender, gameMode: GameMode, targets: Li
             success(" wurde auf ")
             append(displayMode)
             success(" gesetzt.")
-        })
+        }
     }
 }
 

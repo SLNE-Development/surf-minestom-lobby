@@ -1,18 +1,12 @@
 package dev.slne.minestom.lobby.server.command.impl
 
-import dev.slne.minestom.lobby.api.command.commandapi.dsl.anyExecutorSuspend
-import dev.slne.minestom.lobby.api.command.commandapi.dsl.commandTree
-import dev.slne.minestom.lobby.api.command.commandapi.dsl.literalArgument
-import dev.slne.minestom.lobby.api.command.commandapi.dsl.replaceSuggestions
-import dev.slne.minestom.lobby.api.command.commandapi.dsl.replaceSuggestionsAsync
-import dev.slne.minestom.lobby.api.command.commandapi.dsl.stringArgument
+import dev.slne.minestom.lobby.api.command.commandapi.dsl.*
 import dev.slne.minestom.lobby.api.command.commandapi.suggestion.SuggestionInfo
 import dev.slne.minestom.lobby.server.permission.LobbyPermissions
 import dev.slne.minestom.lobby.server.upload.UploadHandler
 import dev.slne.minestom.lobby.server.upload.UploadService
-import dev.slne.surf.api.core.messages.adventure.buildText
+import dev.slne.surf.api.core.messages.adventure.sendText
 import net.kyori.adventure.text.Component.text
-import net.kyori.adventure.text.event.ClickEvent
 import net.kyori.adventure.text.format.NamedTextColor
 import net.minestom.server.command.CommandSender
 
@@ -79,23 +73,23 @@ fun uploadsCommand(uploads: UploadService) = commandTree("uploads") {
                         ?: return@anyExecutorSuspend
 
                     if (deleted) {
-                        sender.sendMessage(buildText {
+                        sender.sendText {
                             appendSuccessPrefix()
                             success("Der Eintrag ")
                             variableValue(key)
                             success(" wurde aus ")
                             variableValue(kind)
                             success(" gelöscht.")
-                        })
+                        }
                     } else {
-                        sender.sendMessage(buildText {
+                        sender.sendText {
                             appendInfoPrefix()
                             info("Der Eintrag ")
                             variableValue(key)
                             info(" existierte nicht in ")
                             variableValue(kind)
                             info(".")
-                        })
+                        }
                     }
                 }
             }
@@ -104,33 +98,33 @@ fun uploadsCommand(uploads: UploadService) = commandTree("uploads") {
 }
 
 private suspend fun CommandSender.sendOverview(uploads: UploadService) {
-    sendMessage(buildText {
+    sendText {
         spacer("Uploads:")
-    })
+    }
 
     for (name in uploads.directoryNames) {
         val entries = uploads.handler(name)?.list().orEmpty()
 
-        sendMessage(buildText {
+        sendText {
             darkSpacer(" - ")
             variableValue(name)
             spacer(" (")
             variableValue(entries.size)
             spacer(" Einträge)")
             clickRunsCommand("/uploads list $name")
-        })
+        }
     }
 }
 
 private suspend fun CommandSender.sendEntries(kind: String, handler: UploadHandler) {
     val entries = handler.list()
 
-    sendMessage(buildText {
+    sendText {
         variableValue(kind)
         spacer(" enthält ")
         variableValue(entries.size)
         spacer(" Einträge:")
-    })
+    }
 
     for ((key, detail) in entries) {
         val line = text()
@@ -146,13 +140,13 @@ private suspend fun CommandSender.sendEntries(kind: String, handler: UploadHandl
 }
 
 private fun CommandSender.sendUnknownKind(uploads: UploadService, kind: String) {
-    sendMessage(buildText {
+    sendText {
         appendErrorPrefix()
         error("Es gibt keine Upload-Art ")
         variableValue(kind)
         error(". Verfügbar: ")
         variableValue(uploads.directoryNames.joinToString(", "))
-    })
+    }
 }
 
 /**
@@ -165,12 +159,12 @@ private suspend fun UploadHandler.deleteOrReport(sender: CommandSender, key: Str
             throw failure
         }
 
-        sender.sendMessage(buildText {
+        sender.sendText {
             appendErrorPrefix()
             error("Der Eintrag ")
             variableValue(key)
             error(" konnte nicht gelöscht werden: ")
             error(failure.message ?: "Unbekannter Fehler")
-        })
+        }
         null
     }
