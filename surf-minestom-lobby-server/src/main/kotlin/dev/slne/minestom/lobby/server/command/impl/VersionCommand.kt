@@ -91,8 +91,9 @@ private fun CommandSender.sendStatus(status: LobbyVersionStatus) = when (status)
     }
 
     is LobbyVersionStatus.CheckFailed -> sendMessage(
-        text()
-            .append(text("Die Build-Prüfung ist fehlgeschlagen: ", NamedTextColor.RED))
-            .append(text(status.reason, NamedTextColor.GOLD))
+        buildText {
+            error("Die Build-Prüfung ist fehlgeschlagen: ")
+            variableValue(status.reason)
+        }
     )
 }
