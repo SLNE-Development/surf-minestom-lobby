@@ -1,6 +1,5 @@
 package dev.slne.minestom.lobby.api.player
 
-import net.minestom.server.command.CommandSender
 import net.minestom.server.entity.Player
 import net.minestom.server.event.trait.PlayerEvent
 import kotlin.contracts.ExperimentalContracts
