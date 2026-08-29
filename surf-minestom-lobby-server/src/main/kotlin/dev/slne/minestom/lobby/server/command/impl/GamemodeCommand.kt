@@ -2,6 +2,7 @@ package dev.slne.minestom.lobby.server.command.impl
 
 import dev.slne.minestom.lobby.api.command.commandapi.dsl.*
 import dev.slne.minestom.lobby.server.permission.LobbyPermissions
+import dev.slne.surf.api.core.messages.adventure.sendText
 import net.kyori.adventure.text.Component.text
 import net.kyori.adventure.text.format.NamedTextColor
 import net.minestom.server.command.CommandSender
@@ -33,35 +34,36 @@ private fun applyGameMode(sender: CommandSender, gameMode: GameMode, targets: Li
         player.scheduleNextTick { player.gameMode = gameMode }
 
         if (!selfExecution) {
-            player.sendMessage(
-                text("Dein Spielmodus wurde auf ", NamedTextColor.GRAY)
-                    .append(displayMode)
-                    .append(text(" gesetzt.", NamedTextColor.GRAY))
-            )
+            player.sendText {
+                appendSuccessPrefix()
+                success("Dein Spielmodus wurde auf ")
+                append(displayMode)
+                success(" gesetzt.")
+            }
         }
     }
 
     if (selfExecution) {
-        sender.sendMessage(
-            text("Dein Spielmodus wurde auf ", NamedTextColor.GRAY)
-                .append(displayMode)
-                .append(text(" gesetzt.", NamedTextColor.GRAY))
-        )
+        sender.sendText {
+            appendSuccessPrefix()
+            success("Dein Spielmodus wurde auf ")
+            append(displayMode)
+            success(" gesetzt.")
+        }
     } else {
-        sender.sendMessage(
-            text("Der Spielmodus von ", NamedTextColor.GRAY)
-                .append {
-                    if (targets.size == 1) {
-                        text(targets.first().username, NamedTextColor.GOLD)
-                    } else {
-                        text(targets.size, NamedTextColor.GOLD)
-                            .append(text(" Spielern", NamedTextColor.GRAY))
-                    }
-                }
-                .append(text(" wurde auf ", NamedTextColor.GRAY))
-                .append(displayMode)
-                .append(text(" gesetzt.", NamedTextColor.GRAY))
-        )
+        sender.sendText {
+            appendSuccessPrefix()
+            success("Der Spielmodus von ")
+            if (targets.size == 1) {
+                append(text(targets.first().username, NamedTextColor.GOLD))
+            } else {
+                append(text(targets.size, NamedTextColor.GOLD))
+                append(text(" Spielern", NamedTextColor.GRAY))
+            }
+            success(" wurde auf ")
+            append(displayMode)
+            success(" gesetzt.")
+        }
     }
 }
 

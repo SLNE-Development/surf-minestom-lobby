@@ -4,8 +4,7 @@ import dev.slne.minestom.lobby.api.command.commandapi.dsl.anyExecutor
 import dev.slne.minestom.lobby.api.command.commandapi.dsl.commandTree
 import dev.slne.minestom.lobby.api.command.commandapi.dsl.multiLiteralArgument
 import dev.slne.minestom.lobby.server.permission.LobbyPermissions
-import net.kyori.adventure.text.Component.text
-import net.kyori.adventure.text.format.NamedTextColor
+import dev.slne.surf.api.core.messages.adventure.sendText
 import net.minestom.server.MinecraftServer
 import net.minestom.server.world.Difficulty
 
@@ -15,15 +14,11 @@ fun difficultyCommand() = commandTree("difficulty") {
 
     anyExecutor { sender, _ ->
         val current = MinecraftServer.getDifficulty()
-        sender.sendMessage(
-            text("Die aktuelle Schwierigkeit ist ", NamedTextColor.GRAY)
-                .append(
-                    text(
-                        current.name.lowercase().replaceFirstChar { it.uppercase() },
-                        NamedTextColor.GOLD
-                    )
-                )
-        )
+        sender.sendText {
+            appendInfoPrefix()
+            info("Die aktuelle Schwierigkeit ist ")
+            variableValue(current.name.lowercase().replaceFirstChar { it.uppercase() })
+        }
     }
 
     multiLiteralArgument(
@@ -33,16 +28,14 @@ fun difficultyCommand() = commandTree("difficulty") {
         anyExecutor { sender, arguments ->
             val difficulty = Difficulty.valueOf(arguments.get<String>("difficulty").uppercase())
             MinecraftServer.setDifficulty(difficulty)
-            sender.sendMessage(
-                text("Die Schwierigkeit wurde auf ", NamedTextColor.GRAY)
-                    .append(
-                        text(
-                            difficulty.name.lowercase().replaceFirstChar { it.uppercase() },
-                            NamedTextColor.GOLD
-                        )
-                    )
-                    .append(text(" gesetzt.", NamedTextColor.GRAY))
-            )
+
+
+            sender.sendText {
+                appendSuccessPrefix()
+                success("Die Schwierigkeit wurde auf ")
+                variableValue(difficulty.name.lowercase().replaceFirstChar { it.uppercase() })
+                success(" gesetzt.")
+            }
         }
     }
 }

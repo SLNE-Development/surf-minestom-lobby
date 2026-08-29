@@ -4,6 +4,7 @@ import dev.slne.minestom.lobby.api.command.commandapi.dsl.anyExecutor
 import dev.slne.minestom.lobby.api.command.commandapi.dsl.commandAPICommand
 import dev.slne.minestom.lobby.api.extension.ConnectionManager
 import dev.slne.minestom.lobby.server.permission.LobbyPermissions
+import dev.slne.surf.api.core.messages.adventure.sendText
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.Component.text
 import net.kyori.adventure.text.JoinConfiguration
@@ -28,19 +29,17 @@ fun listPlayersCommand() = commandAPICommand("list") {
             }
         )
 
-        sender.sendMessage(
-            text()
-                .append(text("Es ", NamedTextColor.GRAY))
-                .append {
-                    if (size == 1) {
-                        text("ist ", NamedTextColor.GRAY)
-                    } else {
-                        text("sind ", NamedTextColor.GRAY)
-                    }
-                }
-                .append(text(" $size ", NamedTextColor.GOLD))
-                .append(text("Spieler online: ", NamedTextColor.GRAY))
-                .append(joined)
-        )
+        sender.sendText {
+            appendInfoPrefix()
+            info("Es ")
+            if (size == 1) {
+                info("ist ")
+            } else {
+                info("sind ")
+            }
+            info(" $size ")
+            info("Spieler online: ")
+            append(joined)
+        }
     }
 }

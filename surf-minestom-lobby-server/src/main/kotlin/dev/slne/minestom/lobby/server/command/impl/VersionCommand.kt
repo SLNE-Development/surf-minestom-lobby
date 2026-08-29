@@ -7,10 +7,10 @@ import dev.slne.minestom.lobby.server.version.LOBBY_DOWNLOAD_URL
 import dev.slne.minestom.lobby.server.version.LobbyBuildInfo
 import dev.slne.minestom.lobby.server.version.LobbyVersionService
 import dev.slne.minestom.lobby.server.version.LobbyVersionStatus
-import net.kyori.adventure.text.Component
+import dev.slne.surf.api.core.messages.Colors
+import dev.slne.surf.api.core.messages.adventure.buildText
+import dev.slne.surf.api.core.messages.adventure.sendText
 import net.kyori.adventure.text.Component.text
-import net.kyori.adventure.text.event.ClickEvent
-import net.kyori.adventure.text.format.NamedTextColor
 import net.minestom.server.MinecraftServer
 import net.minestom.server.command.CommandSender
 
@@ -25,89 +25,72 @@ fun versionCommand(versionService: LobbyVersionService) = commandAPICommand("ver
 }
 
 private fun CommandSender.sendBuild(buildInfo: LobbyBuildInfo) {
-    val version = text()
-        .append(text("Dieser Server läuft Surf Minestom Lobby ", NamedTextColor.GRAY))
-        .append(text(buildInfo.displayVersion, NamedTextColor.GOLD))
+    sendText {
+        appendInfoPrefix()
+        info("Dieser Server läuft auf Surf Minestom Lobby ")
+        variableValue(buildInfo.displayVersion)
 
-    buildInfo.commit?.let { commit ->
-        version
-            .hoverEvent(text("Commit: $commit", NamedTextColor.GRAY))
-            .clickEvent(ClickEvent.copyToClipboard(commit))
+        buildInfo.commit?.let {
+            hoverEvent(buildText {
+                info("Commit: ")
+                variableValue(it)
+            })
+            clickCopiesToClipboard(it)
+        }
     }
-
-    sendMessage(version)
 
     buildInfo.commitTime?.let { commitTime ->
-        sendMessage(
-            text()
-                .append(text("Commit vom ", NamedTextColor.GRAY))
-                .append(text(commitTime.toString(), NamedTextColor.GOLD))
-        )
+        sendText {
+            spacer("Commit vom ")
+            variableValue(commitTime.toString())
+        }
     }
 
-    sendMessage(
-        text()
-            .append(text("Minecraft ", NamedTextColor.GRAY))
-            .append(text(MinecraftServer.VERSION_NAME, NamedTextColor.GOLD))
-            .append(text(" (Protokoll ", NamedTextColor.GRAY))
-            .append(text(MinecraftServer.PROTOCOL_VERSION, NamedTextColor.GOLD))
-            .append(text(")", NamedTextColor.GRAY))
-    )
+    sendText {
+        spacer("Minecraft ")
+        variableValue(MinecraftServer.VERSION_NAME)
+        spacer(" (Protokoll ")
+        variableValue(MinecraftServer.PROTOCOL_VERSION.toString())
+        spacer(")")
+    }
 }
 
 private fun CommandSender.sendStatus(status: LobbyVersionStatus) = when (status) {
     LobbyVersionStatus.UpToDate -> sendMessage(
-        text("Der Server läuft auf dem neuesten Build.", NamedTextColor.GRAY)
+        text("Der Server läuft auf dem neuesten Build.", Colors.SUCCESS)
     )
 
     LobbyVersionStatus.DevelopmentBuild -> sendMessage(
         text(
-            "Entwicklungs-Build - es gibt keine Build-Nummer zum Vergleichen.",
-            NamedTextColor.GRAY
+            "Der Server läuft auf einer Entwicklungsversion.",
+            Colors.SPACER
         )
     )
 
     is LobbyVersionStatus.Behind -> {
-        val behind = text()
-            .append(text("Der Server ist ", NamedTextColor.GRAY))
-            .append {
-                if (status.atLeast) {
-                    text("mindestens ", NamedTextColor.GRAY)
-                } else {
-                    Component.empty()
-                }
-            }
-            .append(text(status.builds, NamedTextColor.GOLD))
-            .append {
-                if (status.builds == 1) {
-                    text(" Build ", NamedTextColor.GRAY)
-                } else {
-                    text(" Builds ", NamedTextColor.GRAY)
-                }
-            }
-            .append(text("hinter dem neuesten Build ", NamedTextColor.GRAY))
-            .append(text("#${status.latestBuildNumber}", NamedTextColor.GOLD))
-            .append(text(".", NamedTextColor.GRAY))
+        sendText {
+            spacer("Der Server ist ")
+            variableValue(status.builds.toString())
+            spacer(" Build(s) hinter dem neuesten Build #${status.latestBuildNumber}.")
 
-        status.latestCommit?.let { commit ->
-            behind.hoverEvent(text("Neuester Commit: $commit", NamedTextColor.GRAY))
+            status.latestCommit?.let { commit ->
+                hoverEvent(buildText {
+                    spacer("Neuester Commit: ")
+                    variableValue(commit)
+                })
+            }
         }
-
-        sendMessage(behind)
-
-        sendMessage(
-            text()
-                .append(text("Download: ", NamedTextColor.GRAY))
-                .append(
-                    text(LOBBY_DOWNLOAD_URL, NamedTextColor.GOLD)
-                        .clickEvent(ClickEvent.openUrl(LOBBY_DOWNLOAD_URL))
-                )
-        )
+        sendText {
+            spacer("Download: ")
+            variableValue(LOBBY_DOWNLOAD_URL)
+            clickOpensUrl(LOBBY_DOWNLOAD_URL)
+        }
     }
 
     is LobbyVersionStatus.CheckFailed -> sendMessage(
-        text()
-            .append(text("Die Build-Prüfung ist fehlgeschlagen: ", NamedTextColor.RED))
-            .append(text(status.reason, NamedTextColor.GOLD))
+        buildText {
+            error("Die Build-Prüfung ist fehlgeschlagen: ")
+            variableValue(status.reason)
+        }
     )
 }
