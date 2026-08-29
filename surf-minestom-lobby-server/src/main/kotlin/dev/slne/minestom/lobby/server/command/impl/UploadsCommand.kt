@@ -10,6 +10,7 @@ import dev.slne.minestom.lobby.api.command.commandapi.suggestion.SuggestionInfo
 import dev.slne.minestom.lobby.server.permission.LobbyPermissions
 import dev.slne.minestom.lobby.server.upload.UploadHandler
 import dev.slne.minestom.lobby.server.upload.UploadService
+import dev.slne.surf.api.core.messages.adventure.buildText
 import net.kyori.adventure.text.Component.text
 import net.kyori.adventure.text.event.ClickEvent
 import net.kyori.adventure.text.format.NamedTextColor
@@ -78,23 +79,23 @@ fun uploadsCommand(uploads: UploadService) = commandTree("uploads") {
                         ?: return@anyExecutorSuspend
 
                     if (deleted) {
-                        sender.sendMessage(
-                            text()
-                                .append(text("Der Eintrag ", NamedTextColor.GRAY))
-                                .append(text(key, NamedTextColor.GOLD))
-                                .append(text(" wurde aus ", NamedTextColor.GRAY))
-                                .append(text(kind, NamedTextColor.GOLD))
-                                .append(text(" gelöscht.", NamedTextColor.GRAY))
-                        )
+                        sender.sendMessage(buildText {
+                            appendSuccessPrefix()
+                            success("Der Eintrag ")
+                            variableValue(key)
+                            success(" wurde aus ")
+                            variableValue(kind)
+                            success(" gelöscht.")
+                        })
                     } else {
-                        sender.sendMessage(
-                            text()
-                                .append(text("In ", NamedTextColor.GRAY))
-                                .append(text(kind, NamedTextColor.GOLD))
-                                .append(text(" ist kein Eintrag ", NamedTextColor.GRAY))
-                                .append(text(key, NamedTextColor.GOLD))
-                                .append(text(" gespeichert.", NamedTextColor.GRAY))
-                        )
+                        sender.sendMessage(buildText {
+                            appendInfoPrefix()
+                            info("Der Eintrag ")
+                            variableValue(key)
+                            info(" existierte nicht in ")
+                            variableValue(kind)
+                            info(".")
+                        })
                     }
                 }
             }
@@ -103,33 +104,33 @@ fun uploadsCommand(uploads: UploadService) = commandTree("uploads") {
 }
 
 private suspend fun CommandSender.sendOverview(uploads: UploadService) {
-    sendMessage(text("Uploads:", NamedTextColor.GRAY))
+    sendMessage(buildText {
+        spacer("Uploads:")
+    })
 
     for (name in uploads.directoryNames) {
         val entries = uploads.handler(name)?.list().orEmpty()
 
-        sendMessage(
-            text()
-                .append(text(" - ", NamedTextColor.DARK_GRAY))
-                .append(text(name, NamedTextColor.GOLD))
-                .append(text(" (", NamedTextColor.GRAY))
-                .append(text(entries.size, NamedTextColor.GOLD))
-                .append(text(" Einträge)", NamedTextColor.GRAY))
-                .clickEvent(ClickEvent.runCommand("/uploads list $name"))
-        )
+        sendMessage(buildText {
+            darkSpacer(" - ")
+            variableValue(name)
+            spacer(" (")
+            variableValue(entries.size)
+            spacer(" Einträge)")
+            clickRunsCommand("/uploads list $name")
+        })
     }
 }
 
 private suspend fun CommandSender.sendEntries(kind: String, handler: UploadHandler) {
     val entries = handler.list()
 
-    sendMessage(
-        text()
-            .append(text(kind, NamedTextColor.GOLD))
-            .append(text(" enthält ", NamedTextColor.GRAY))
-            .append(text(entries.size, NamedTextColor.GOLD))
-            .append(text(" Einträge:", NamedTextColor.GRAY))
-    )
+    sendMessage(buildText {
+        variableValue(kind)
+        spacer(" enthält ")
+        variableValue(entries.size)
+        spacer(" Einträge:")
+    })
 
     for ((key, detail) in entries) {
         val line = text()
@@ -145,13 +146,13 @@ private suspend fun CommandSender.sendEntries(kind: String, handler: UploadHandl
 }
 
 private fun CommandSender.sendUnknownKind(uploads: UploadService, kind: String) {
-    sendMessage(
-        text()
-            .append(text("Es gibt keine Upload-Art ", NamedTextColor.RED))
-            .append(text(kind, NamedTextColor.GOLD))
-            .append(text(". Verfügbar: ", NamedTextColor.RED))
-            .append(text(uploads.directoryNames.joinToString(", "), NamedTextColor.GOLD))
-    )
+    sendMessage(buildText {
+        appendErrorPrefix()
+        error("Es gibt keine Upload-Art ")
+        variableValue(kind)
+        error(". Verfügbar: ")
+        variableValue(uploads.directoryNames.joinToString(", "))
+    })
 }
 
 /**
@@ -164,12 +165,12 @@ private suspend fun UploadHandler.deleteOrReport(sender: CommandSender, key: Str
             throw failure
         }
 
-        sender.sendMessage(
-            text(
-                failure.message ?: "Der Eintrag konnte nicht gelöscht werden.",
-                NamedTextColor.RED
-            )
-        )
-
+        sender.sendMessage(buildText {
+            appendErrorPrefix()
+            error("Der Eintrag ")
+            variableValue(key)
+            error(" konnte nicht gelöscht werden: ")
+            error(failure.message ?: "Unbekannter Fehler")
+        })
         null
     }

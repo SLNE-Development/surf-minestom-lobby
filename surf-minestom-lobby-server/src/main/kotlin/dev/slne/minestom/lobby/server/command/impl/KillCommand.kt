@@ -6,6 +6,7 @@ import dev.slne.minestom.lobby.api.command.commandapi.dsl.entitiesArgument
 import dev.slne.minestom.lobby.api.command.commandapi.dsl.playerExecutor
 import dev.slne.minestom.lobby.api.command.entity.displayName
 import dev.slne.minestom.lobby.server.permission.LobbyPermissions
+import dev.slne.surf.api.core.messages.adventure.buildText
 import net.kyori.adventure.text.Component.text
 import net.kyori.adventure.text.format.NamedTextColor
 import net.minestom.server.command.CommandSender
@@ -34,18 +35,18 @@ private fun kill(sender: CommandSender, victims: List<Entity>) {
     }
 
     if (victims.size == 1) {
-        sender.sendMessage(
-            text()
-                .append(victims.first().displayName.colorIfAbsent(NamedTextColor.GOLD))
-                .appendSpace()
-                .append(text("wurde getötet!", NamedTextColor.GRAY))
-        )
+        sender.sendMessage(buildText {
+            appendSuccessPrefix()
+            success("Du hast ")
+            append(victims.first().displayName.colorIfAbsent(NamedTextColor.GOLD))
+            success(" getötet!")
+        })
     } else {
-        sender.sendMessage(
-            text()
-                .append(text("${victims.size} Entitäten", NamedTextColor.GOLD))
-                .appendSpace()
-                .append(text("wurden getötet!", NamedTextColor.GRAY))
-        )
+        sender.sendMessage(buildText {
+            appendSuccessPrefix()
+            success("Du hast ")
+            append(text("${victims.size} Entitäten", NamedTextColor.GOLD))
+            success(" getötet!")
+        })
     }
 }

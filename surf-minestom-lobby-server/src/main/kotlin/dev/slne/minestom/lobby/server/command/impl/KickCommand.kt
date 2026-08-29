@@ -5,6 +5,7 @@ import dev.slne.minestom.lobby.api.command.commandapi.argument.PlayersArgument
 import dev.slne.minestom.lobby.api.command.commandapi.dsl.anyExecutor
 import dev.slne.minestom.lobby.api.command.commandapi.dsl.commandAPICommand
 import dev.slne.minestom.lobby.server.permission.LobbyPermissions
+import dev.slne.surf.api.core.messages.adventure.buildText
 import net.kyori.adventure.text.Component.text
 import net.kyori.adventure.text.format.NamedTextColor
 import net.minestom.server.entity.Player
@@ -26,11 +27,11 @@ fun kickCommand() = commandAPICommand("kick") {
             }
         }
 
-        sender.sendMessage(
-            text()
-                .append(text("Du hast ", NamedTextColor.GRAY))
-                .append(text("${targets.size} Spieler", NamedTextColor.GOLD))
-                .append(text(" gekickt.", NamedTextColor.GRAY))
-        )
+        sender.sendMessage(buildText {
+            appendSuccessPrefix()
+            success("Du hast ")
+            append(text("${targets.size} Spieler", NamedTextColor.GOLD))
+            success(" gekickt.")
+        })
     }
 }
