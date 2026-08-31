@@ -3,7 +3,7 @@ kotlin = "2.4.10"
 shadow = "9.6.1"
 gremlim = "0.0.9"
 
-minestom = "2026.08.16-26.2"
+minestom = "2026.08.28-26.2"
 guice = "7.0.0"
 coroutines = "1.10.2"
 configurate = "1.0.0"

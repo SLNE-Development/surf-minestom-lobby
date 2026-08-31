@@ -23,6 +23,7 @@ import net.minestom.server.event.player.PlayerDisconnectEvent
 import net.minestom.server.event.player.PlayerGameModeRequestEvent
 import net.minestom.server.listener.AbilitiesListener
 import net.minestom.server.network.packet.client.play.ClientPlayerAbilitiesPacket
+import net.minestom.server.network.packet.client.play.ClientQueryEntityNbtPacket
 import net.minestom.server.network.packet.server.play.PlayerAbilitiesPacket
 import kotlin.experimental.and
 
@@ -44,6 +45,7 @@ class LobbyPlayerListener @Inject constructor(
 
         with(PacketListenerManager) {
             setPlayListener(::handlePlayerAbilities)
+            setPlayListener(::handleQueryEntityNbtPacket)
             setConfigurationListener(codeOfConduct::handleAcceptPacket)
         }
     }
@@ -80,5 +82,10 @@ class LobbyPlayerListener @Inject constructor(
         }
 
         AbilitiesListener.listener(packet, player)
+    }
+
+    @Suppress("UNUSED_PARAMETER")
+    private fun handleQueryEntityNbtPacket(packet: ClientQueryEntityNbtPacket, player: Player) {
+        // No op
     }
 }

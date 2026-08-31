@@ -12,6 +12,7 @@
     "InteractionControllerMixin",
     "LightingChunkSkylightMixin",
     "PlayerSocketConnectionMixin",
+    "ServerMixin",
     "TextDisplayControllerMixin"
   ],
   "injectors": {
