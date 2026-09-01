@@ -5,8 +5,8 @@ dev.slne.surf.bb:surf-ban-bypass-minestom 2.2.3 2.2.4
 dev.slne.surf.bitmap:surf-bitmap-provider-minestom 3.0.3
 dev.slne.surf.chat:surf-chat-minestom 4.5.10 4.5.11 4.5.12 4.5.13 4.5.14 4.5.15
 dev.slne.surf.clan:surf-clan-minestom 2.3.4 2.3.5
-dev.slne.surf.content.creator:surf-content-creator-minestom 2.2.6 2.2.7
-dev.slne.surf.core:surf-core-minestom 2.4.13 2.4.14 2.4.15 2.4.16 2.4.17 2.4.18 2.4.19 2.5.0 2.5.1
+dev.slne.surf.content.creator:surf-content-creator-minestom 2.2.6 2.2.7 2.2.8
+dev.slne.surf.core:surf-core-minestom 2.4.13 2.4.14 2.4.15 2.4.16 2.4.17 2.4.18 2.4.19 2.5.0 2.5.1 2.5.2
 dev.slne.surf.friends:surf-friends-minestom 3.0.7 3.0.8
 dev.slne.surf.jumppad:surf-jumppad-minestom 1.1.3 1.1.4 1.1.5
 dev.slne.surf.lobby:surf-lobby-minestom 3.1.13 3.1.14 3.1.15
@@ -17,7 +17,7 @@ dev.slne.surf.profile:surf-profile-minestom 1.1.3 1.1.4
 dev.slne.surf.punish:surf-punish-minestom 1.2.13 1.2.14
 dev.slne.surf.queue:surf-queue-minestom 1.2.10 1.2.9
 dev.slne.surf.rabbitmq:surf-rabbitmq-minestom 1.6.4 1.6.5 1.6.6 1.6.7 1.6.8
-dev.slne.surf.redis:surf-redis-minestom 1.10.2 1.10.3 1.10.4 1.10.5 1.10.6
+dev.slne.surf.redis:surf-redis-minestom 1.10.2 1.10.3 1.10.4 1.10.5 1.10.6 1.11.0 1.11.1 1.11.2
 dev.slne.surf.settings:surf-settings-minestom 2.2.11 2.2.12
 dev.slne.surf.social:surf-social-minestom 1.1.12 1.1.13
 dev.slne.surf.tab:surf-tab-minestom 1.1.9 1.2.1 1.2.2 1.2.3 1.2.4 1.2.5 1.2.6 1.2.7
