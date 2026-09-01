@@ -29,7 +29,7 @@ mariadb-jdbc = "3.5.8"
 postgresql-jdbc = "42.7.13"
 
 luckperms-minestom = "5.5+26.2-SNAPSHOT" # substituted by the vendor/LuckPerms included build
-spark = "1.10.172-SNAPSHOT" # substituted by the vendor/spark-minestom included build
+spark = "1.10.181-SNAPSHOT" # substituted by the vendor/spark-minestom included build
 
 [libraries]
 minestom = { module = "net.minestom:minestom", version.ref = "minestom" }

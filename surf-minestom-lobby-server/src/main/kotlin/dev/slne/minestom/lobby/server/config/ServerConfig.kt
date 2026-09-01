@@ -17,6 +17,10 @@ data class ServerConfig(
     @Comment("Number of players that may be connected at once.")
     val maxPlayers: Int = 100,
 
+    @Setting("log-connections")
+    @Comment("Whether to log join/leave messages to the console.")
+    val logConnections: Boolean = true,
+
     @Setting("spawn")
     val spawn: ConfigPosition = ConfigPosition(),
 

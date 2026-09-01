@@ -14,6 +14,7 @@ import dev.slne.minestom.lobby.server.player.config.CodeOfConductConfigurationTa
 import dev.slne.minestom.lobby.server.util.setConfigurationListener
 import dev.slne.minestom.lobby.server.util.setPlayListener
 import dev.slne.minestom.lobby.server.world.LobbyWorldService
+import net.minestom.server.MinecraftServer
 import net.minestom.server.entity.Player
 import net.minestom.server.event.Event
 import net.minestom.server.event.EventDispatcher
@@ -21,10 +22,12 @@ import net.minestom.server.event.EventNode
 import net.minestom.server.event.player.AsyncPlayerConfigurationEvent
 import net.minestom.server.event.player.PlayerDisconnectEvent
 import net.minestom.server.event.player.PlayerGameModeRequestEvent
+import net.minestom.server.event.player.PlayerSpawnEvent
 import net.minestom.server.listener.AbilitiesListener
 import net.minestom.server.network.packet.client.play.ClientPlayerAbilitiesPacket
 import net.minestom.server.network.packet.client.play.ClientQueryEntityNbtPacket
 import net.minestom.server.network.packet.server.play.PlayerAbilitiesPacket
+import sun.security.krb5.internal.KDCOptions.with
 import kotlin.experimental.and
 
 @Singleton
@@ -37,6 +40,7 @@ class LobbyPlayerListener @Inject constructor(
 
     override fun register(node: EventNode<Event>) {
         with(node) {
+            addListener(::handleJoin)
             addListener(::handleDisconnect)
             addListener(awaitSettings::handleSettingsChange)
             addListener(::handlePlayerConfiguration)
@@ -53,6 +57,17 @@ class LobbyPlayerListener @Inject constructor(
     private fun handleDisconnect(event: PlayerDisconnectEvent) {
         awaitSettings.handleDisconnect(event)
         codeOfConduct.handleDisconnect(event)
+
+        if (config.logConnections) {
+            MinecraftServer.LOGGER.info("Player {} disconnected", event.player.username)
+        }
+    }
+
+    private fun handleJoin(event: PlayerSpawnEvent) {
+        if (!event.isFirstSpawn) return
+        if (config.logConnections) {
+            MinecraftServer.LOGGER.info("Player {} joined", event.player.username)
+        }
     }
 
     private fun handlePlayerConfiguration(event: AsyncPlayerConfigurationEvent) {
