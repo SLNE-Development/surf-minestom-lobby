@@ -11,7 +11,6 @@
     "EntityTrackerMixin",
     "InteractionControllerMixin",
     "LightingChunkSkylightMixin",
-    "PlayerSocketConnectionMixin",
     "ServerMixin",
     "TextDisplayControllerMixin"
   ],

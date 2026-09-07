@@ -133,11 +133,11 @@ class PositionArgumentIntegrationTest {
         withPlayerPlatform(env, Pos(0.0, 0.0, 0.0, 45f, 10f)) { player ->
             val compiled = AngleArgument("angle").toDefinition()
 
-            assertEquals(90f, compiled.read(player, "450") as Float)
-            assertEquals(-90f, compiled.read(player, "270") as Float)
-            assertEquals(45f, compiled.read(player, "~") as Float)
-            assertEquals(55f, compiled.read(player, "~10") as Float)
-            assertEquals(-115f, compiled.read(player, "~200") as Float)
+            assertEquals(90f, compiled.read(player, "450"))
+            assertEquals(-90f, compiled.read(player, "270"))
+            assertEquals(45f, compiled.read(player, "~"))
+            assertEquals(55f, compiled.read(player, "~10"))
+            assertEquals(-115f, compiled.read(player, "~200"))
 
             assertThrows(CommandSyntaxException::class.java) { compiled.read(player, "~-") }
             assertThrows(CommandSyntaxException::class.java) { compiled.read(player, "not-a-number") }
