@@ -20,12 +20,14 @@ import org.spongepowered.asm.mixin.Mixins
  */
 object MixinTestSupport {
 
+    const val CONFIGURATION = "mixins.surf-lobby.json"
+
     val transformer: ClassFileTransformer by lazy {
         val instrumentation = RecordingInstrumentation()
         InstrumentationMixinService.setInstrumentation(instrumentation)
         MixinBootstrap.init()
         MixinExtrasBootstrap.init()
-        Mixins.addConfiguration("mixins.surf-lobby.json")
+        Mixins.addConfiguration(CONFIGURATION)
         advanceMixinPhases()
         checkNotNull(instrumentation.transformer) { "mixin never installed its transformer" }
     }
