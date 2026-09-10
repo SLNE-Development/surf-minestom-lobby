@@ -5,6 +5,7 @@ import com.google.inject.Singleton
 import dev.slne.minestom.lobby.api.extension.ConnectionManager
 import dev.slne.minestom.lobby.server.lifecycle.LobbyService
 import dev.slne.minestom.lobby.server.player.config.*
+import dev.slne.minestom.lobby.server.player.visibility.PlayerVisibilityService
 
 @Singleton
 class LobbyPlayerService @Inject constructor(
@@ -16,6 +17,7 @@ class LobbyPlayerService @Inject constructor(
     private val codeOfConduct: CodeOfConductConfigurationTask,
     private val resourcePack: ResourcePackTask,
     private val joinWorld: JoinWorldTask,
+    private val visibility: PlayerVisibilityService,
 ) : LobbyService {
 
     override suspend fun start() {
@@ -32,5 +34,11 @@ class LobbyPlayerService @Inject constructor(
             ),
             loginGate,
         )
+
+        visibility.start()
+    }
+
+    override suspend fun stop() {
+        visibility.stop()
     }
 }

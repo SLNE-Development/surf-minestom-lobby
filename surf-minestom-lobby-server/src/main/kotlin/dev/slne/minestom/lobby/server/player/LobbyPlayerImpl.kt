@@ -10,15 +10,12 @@ import dev.slne.minestom.lobby.server.chat.BoundChatType
 import dev.slne.minestom.lobby.server.chat.LobbyChatTypes
 import dev.slne.minestom.lobby.server.chat.OutgoingChatMessage
 import dev.slne.minestom.lobby.server.chat.PlayerChatHandler
-import dev.slne.minestom.lobby.server.chat.signature.FILTER_MASK_PASS_THROUGH
-import dev.slne.minestom.lobby.server.chat.signature.LastSeenMessages
-import dev.slne.minestom.lobby.server.chat.signature.PlayerChatMessage
-import dev.slne.minestom.lobby.server.chat.signature.SignedMessageBody
-import dev.slne.minestom.lobby.server.chat.signature.SignedMessageLink
+import dev.slne.minestom.lobby.server.chat.signature.*
 import dev.slne.minestom.lobby.server.config.ServerConfig
 import dev.slne.minestom.lobby.server.integration.luckperms.LuckPermsService
 import dev.slne.minestom.lobby.server.packet.framed
 import dev.slne.minestom.lobby.server.packet.server.play.DeleteChatPacketModern
+import dev.slne.minestom.lobby.server.player.visibility.PlayerVisibilityHandler
 import net.kyori.adventure.chat.SignedMessage
 import net.kyori.adventure.permission.PermissionChecker
 import net.kyori.adventure.pointer.Pointers
@@ -28,18 +25,21 @@ import net.kyori.adventure.util.TriState
 import net.luckperms.api.util.Tristate
 import net.minestom.server.crypto.ChatSession
 import net.minestom.server.crypto.MessageSignature
+import net.minestom.server.entity.Entity
 import net.minestom.server.entity.GameMode
 import net.minestom.server.network.packet.server.play.PlayerInfoRemovePacket
 import net.minestom.server.network.packet.server.play.PlayerInfoUpdatePacket
 import net.minestom.server.network.player.GameProfile
 import net.minestom.server.network.player.PlayerConnection
-import java.util.EnumSet
+import java.util.*
+import java.util.function.Predicate
 
 class LobbyPlayerImpl @AssistedInject constructor(
     @Assisted playerConnection: PlayerConnection,
     @Assisted gameProfile: GameProfile,
     private val luckPermsService: LuckPermsService,
     chatConfig: ServerConfig.ChatConfig,
+    visibilityConfig: ServerConfig.PlayerVisibilityConfig,
 ) : LobbyPlayer(playerConnection, gameProfile) {
 
     companion object {
@@ -50,6 +50,7 @@ class LobbyPlayerImpl @AssistedInject constructor(
     }
 
     val chatHandler = PlayerChatHandler(this, chatConfig)
+    val visibilityHandler = PlayerVisibilityHandler(this, visibilityConfig)
 
     private val permissionChecker = PermissionChecker { permission ->
         when (luckPermsService.hasPermission(uuid, permission)) {
@@ -57,6 +58,10 @@ class LobbyPlayerImpl @AssistedInject constructor(
             Tristate.FALSE -> TriState.FALSE
             Tristate.UNDEFINED -> TriState.NOT_SET
         }
+    }
+
+    init {
+        visibilityHandler.init() // Call after visibilityHandler is initialized
     }
 
     override fun hasPermission(permission: String): Boolean {
@@ -185,6 +190,33 @@ class LobbyPlayerImpl @AssistedInject constructor(
 
         completeGameModeSwitch(previousGameMode)
         return true
+    }
+
+    override fun updateViewerRule(predicate: Predicate<in Entity>?) {
+        visibilityHandler.onUpdateViewerRule(
+            predicate = predicate,
+            callSuper = { super.updateViewerRule(predicate) },
+        )
+    }
+
+    override fun updateViewerRule() {
+        visibilityHandler.onUpdateViewerRule(
+            callSuper = { super.updateViewerRule() },
+        )
+    }
+
+    /**
+     * Only calls super.updateViewerRule() without invoking visibilityHandler.onUpdateViewerRule()
+     */
+    @Suppress("FunctionName")
+    fun `updateViewerRule$super`() {
+        super.updateViewerRule()
+    }
+
+    override fun hasPredictableViewers(): Boolean {
+        return visibilityHandler.hasPredictableViewers(
+            callSuper = { super.hasPredictableViewers() }
+        )
     }
 }
 

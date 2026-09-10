@@ -14,6 +14,9 @@ class ConfigModule(private val config: ServerConfig) : AbstractModule() {
     fun chatConfig(config: ServerConfig): ServerConfig.ChatConfig = config.chat
 
     @Provides
+    fun visibilityConfig(config: ServerConfig): ServerConfig.PlayerVisibilityConfig = config.playerVisibility
+
+    @Provides
     fun sparkConfig(config: ServerConfig): ServerConfig.SparkConfig = config.performance.spark
 
     @Provides

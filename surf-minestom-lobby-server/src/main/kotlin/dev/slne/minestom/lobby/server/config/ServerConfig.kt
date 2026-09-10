@@ -2,11 +2,16 @@ package dev.slne.minestom.lobby.server.config
 
 import dev.slne.minestom.lobby.server.config.constraints.NonBlank
 import dev.slne.minestom.lobby.server.config.types.ConfigPosition
+import dev.slne.surf.api.core.config.constraints.PositiveNumber
+import dev.slne.surf.api.core.config.constraints.Range
 import net.minestom.server.entity.EntityTypeKeys
 import net.minestom.server.entity.GameMode
+import org.spongepowered.configurate.NodePath
 import org.spongepowered.configurate.objectmapping.ConfigSerializable
 import org.spongepowered.configurate.objectmapping.meta.Comment
+import org.spongepowered.configurate.objectmapping.meta.PostProcess
 import org.spongepowered.configurate.objectmapping.meta.Setting
+import org.spongepowered.configurate.serialize.SerializationException
 
 @ConfigSerializable
 data class ServerConfig(
@@ -42,6 +47,9 @@ data class ServerConfig(
     @Setting("performance")
     val performance: PerformanceConfig = PerformanceConfig(),
 
+    @Setting("player-visibility")
+    val playerVisibility: PlayerVisibilityConfig = PlayerVisibilityConfig(),
+
     @Setting("chat")
     val chat: ChatConfig = ChatConfig(),
 
@@ -59,6 +67,11 @@ data class ServerConfig(
 ) {
     companion object {
         const val CURRENT_VERSION = 2
+    }
+
+    @PostProcess
+    fun validate() {
+        playerVisibility.validate(NodePath.path("player-visibility"))
     }
 
     @ConfigSerializable
@@ -222,6 +235,50 @@ data class ServerConfig(
         @Setting("spark")
         val spark: SparkConfig = SparkConfig(),
     )
+
+    @ConfigSerializable
+    data class PlayerVisibilityConfig(
+        val enabled: Boolean = true,
+
+        @Setting("max-visible")
+        @PositiveNumber
+        val maxVisible: Int = 50,
+
+        @Setting("activate-at")
+        @Comment("Enable the budget when at least this many players would normally be visible.")
+        val activateAt: Int = 60,
+
+        @Setting("deactivate-below")
+        @Comment("Disable the budget only when the eligible player count falls below this value.")
+        val deactivateBelow: Int = 45,
+
+        @Setting("refresh-interval-ticks")
+        @PositiveNumber
+        val refreshIntervalTicks: Int = 5,
+
+        @Setting("retention-distance-factor")
+        @Comment("Distance multiplier for already selected players. 1.0 disables the distance bias.")
+        @Range(min = 0.0, max = 1.0)
+        val retentionDistanceFactor: Double = 0.9,
+    ) {
+        fun validate(path: NodePath) {
+            if (activateAt < maxVisible) {
+                throw SerializationException(
+                    path.withAppendedChild("activate-at"),
+                    Int::class.java,
+                    "activate-at must be greater than or equal to max-visible"
+                )
+            }
+
+            if (!(deactivateBelow in 1..maxVisible && deactivateBelow < activateAt)) {
+                throw SerializationException(
+                    path.withAppendedChild("deactivate-below"),
+                    Int::class.java,
+                    "deactivate-below must be greater than or equal to max-visible ($maxVisible) and less than activate-at"
+                )
+            }
+        }
+    }
 
     @ConfigSerializable
     data class SparkConfig(
