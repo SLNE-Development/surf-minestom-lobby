@@ -170,6 +170,8 @@ dependencies {
     testImplementation(libs.guice)
     testImplementation(libs.mini.placeholders.minestom) { isTransitive = false }
     testImplementation(libs.brigadier)
+    testImplementation(libs.configurate.yaml)
+    testImplementation(libs.configurate.kotlin)
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.coroutines.test)
     testImplementation(kotlin("test"))
