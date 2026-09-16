@@ -22,6 +22,7 @@ repositories {
     maven("https://reposilite.slne.dev/public") { name = "slne-repository-public" }
     maven("https://reposilite.slne.dev/releases") { name = "slne-repository-releases" }
     maven("https://repo.lucko.me/")
+    mavenLocal()
 
     if (internalPlugins) {
         val githubUser = providers.gradleProperty("gpr.user")
@@ -157,7 +158,7 @@ dependencies {
     runtimeDownload(libs.surf.nametag.minestom)
     runtimeDownload(libs.surf.teleporter.minestom)
     runtimeDownload(libs.surf.trophy.minestom)
-    runtimeDownload(libs.surf.lobby.minestom)
+    implementation(libs.surf.lobby.minestom)
 
     if (internalPlugins) {
         runtimeOnly(libs.surf.anticheat.minestom) { isTransitive = false }
