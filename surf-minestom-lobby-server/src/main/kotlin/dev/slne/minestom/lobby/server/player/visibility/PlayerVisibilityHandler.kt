@@ -63,7 +63,7 @@ class PlayerVisibilityHandler(
 
     fun init() {
         if (visibilityConfig.enabled) {
-            player.updateViewerRule(combinedRule)
+            player.`updateViewerRule$super`(combinedRule)
         }
     }
 

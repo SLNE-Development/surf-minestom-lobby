@@ -213,6 +213,11 @@ class LobbyPlayerImpl @AssistedInject constructor(
         super.updateViewerRule()
     }
 
+    @Suppress("FunctionName")
+    fun `updateViewerRule$super`(predicate: Predicate<in Entity>?) {
+        super.updateViewerRule(predicate)
+    }
+
     override fun hasPredictableViewers(): Boolean {
         return visibilityHandler.hasPredictableViewers(
             callSuper = { super.hasPredictableViewers() }
