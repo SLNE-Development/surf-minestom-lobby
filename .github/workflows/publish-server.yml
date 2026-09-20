@@ -18,8 +18,49 @@ jobs:
   publish:
     environment: production
     runs-on: self-hosted
+
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Read release version
+        id: version
+        shell: bash
+        run: |
+          version="$(sed -n 's/^projectVersion=//p' gradle.properties | tr -d '\r')"
+
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "error: invalid projectVersion '$version'" >&2
+            exit 1
+          fi
+
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=v$version" >> "$GITHUB_OUTPUT"
+
+      - name: Verify release tag
+        id: tag
+        shell: bash
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          git fetch --tags --force origin
+
+          if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+            tag_commit="$(git rev-list -n 1 "$TAG")"
+
+            if [ "$tag_commit" != "$GITHUB_SHA" ]; then
+              echo "error: $TAG already exists and points to $tag_commit" >&2
+              echo "Current commit is $GITHUB_SHA." >&2
+              echo "Bump projectVersion before publishing another release." >&2
+              exit 1
+            fi
+
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Init submodules
         shell: bash
@@ -40,30 +81,53 @@ jobs:
           GIT_COMMITTER_EMAIL: actions@slne.dev
         run: ./gradlew applyPatches
 
-      - name: Build and publish internal jar to reposilite
+      - name: Build and publish Maven artifacts
         shell: bash
         env:
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GH_PACKAGES_READ_TOKEN }}
+
           REPOSILITE_USER: ${{ secrets.REPOSILITE_PRIVATE_USER }}
           REPOSILITE_TOKEN: ${{ secrets.REPOSILITE_PRIVATE_TOKEN }}
-        run: |
-          ./gradlew :surf-minestom-lobby-server:build :surf-minestom-lobby-server:publish \
-            -PinternalPlugins=true --refresh-dependencies
 
-      - name: Build public jar (without internal plugins)
+          SLNE_RELEASES_REPO_USERNAME: ${{ secrets.SLNE_RELEASES_REPO_USERNAME }}
+          SLNE_RELEASES_REPO_PASSWORD: ${{ secrets.SLNE_RELEASES_REPO_PASSWORD }}
+        run: |
+          ./gradlew \
+            :surf-minestom-lobby-api:build \
+            :surf-minestom-lobby-api:publish \
+            :surf-minestom-lobby-server:build \
+            :surf-minestom-lobby-server:publish \
+            -PinternalPlugins=true \
+            --refresh-dependencies
+
+      - name: Build public jar
         shell: bash
         run: |
           ./gradlew :surf-minestom-lobby-server:shadowJar --refresh-dependencies
-          # Stable asset name for the egg; the fat jar is the one without -thin.
+
           cp "$(ls surf-minestom-lobby-server/build/libs/*.jar | grep -v -- -thin | head -1)" \
              surf-minestom-lobby-server.jar
 
-      - name: Update rolling "latest" release with the public jar
+      - name: Create release tag
+        if: steps.tag.outputs.exists != 'true'
+        shell: bash
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          git config user.name github-actions
+          git config user.email actions@slne.dev
+
+          git tag -a "$TAG" "$GITHUB_SHA" -m "Surf Minestom Lobby $VERSION"
+          git push origin "$TAG"
+
+      - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: latest
-          name: Latest master build
-          prerelease: true
-          make_latest: false
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: Surf Minestom Lobby ${{ steps.version.outputs.version }}
+          generate_release_notes: true
+          prerelease: false
+          make_latest: true
           files: surf-minestom-lobby-server.jar

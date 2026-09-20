@@ -57,7 +57,7 @@ private fun CommandSender.sendBuild(buildInfo: LobbyBuildInfo) {
 
 private fun CommandSender.sendStatus(status: LobbyVersionStatus) = when (status) {
     LobbyVersionStatus.UpToDate -> sendMessage(
-        text("Der Server läuft auf dem neuesten Build.", Colors.SUCCESS)
+        text("Der Server läuft auf dem neuesten Release.", Colors.SUCCESS)
     )
 
     LobbyVersionStatus.DevelopmentBuild -> sendMessage(
@@ -67,19 +67,12 @@ private fun CommandSender.sendStatus(status: LobbyVersionStatus) = when (status)
         )
     )
 
-    is LobbyVersionStatus.Behind -> {
+    is LobbyVersionStatus.UpdateAvailable -> {
         sendText {
-            spacer("Der Server ist ")
-            variableValue(status.builds.toString())
-            spacer(" Build(s) hinter dem neuesten Build #${status.latestBuildNumber}.")
-
-            status.latestCommit?.let { commit ->
-                hoverEvent(buildText {
-                    spacer("Neuester Commit: ")
-                    variableValue(commit)
-                })
-            }
+            spacer("Eine neuere Version ist verfügbar: ")
+            variableValue(status.latestVersion)
         }
+
         sendText {
             spacer("Download: ")
             variableValue(LOBBY_DOWNLOAD_URL)
@@ -89,7 +82,7 @@ private fun CommandSender.sendStatus(status: LobbyVersionStatus) = when (status)
 
     is LobbyVersionStatus.CheckFailed -> sendMessage(
         buildText {
-            error("Die Build-Prüfung ist fehlgeschlagen: ")
+            error("Die Release-Prüfung ist fehlgeschlagen: ")
             variableValue(status.reason)
         }
     )

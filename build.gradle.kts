@@ -5,13 +5,17 @@ plugins {
     alias(libs.plugins.shadow) apply false
 }
 
+val projectVersion = providers.gradleProperty("projectVersion").get()
+
 allprojects {
     group = "dev.slne.minestom.lobby"
-    version = "1.1.1"
+    version = projectVersion
 }
 
 subprojects {
     tasks.withType<Test>().configureEach {
+        systemProperty("projectVersion", project.version.toString())
+
         useJUnitPlatform()
         testLogging {
             exceptionFormat = TestExceptionFormat.FULL
