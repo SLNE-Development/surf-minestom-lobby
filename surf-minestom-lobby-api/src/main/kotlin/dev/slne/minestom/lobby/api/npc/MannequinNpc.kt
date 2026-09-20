@@ -13,6 +13,7 @@ import net.minestom.server.entity.EquipmentSlot
 import net.minestom.server.entity.Player
 import net.minestom.server.entity.attribute.Attribute
 import net.minestom.server.entity.metadata.avatar.MannequinMeta
+import net.minestom.server.entity.metadata.display.TextDisplayMeta
 import net.minestom.server.inventory.EquipmentHandler
 import net.minestom.server.item.ItemStack
 import net.minestom.server.network.packet.server.play.EntityAttributesPacket
@@ -76,7 +77,13 @@ class MannequinNpc(
         StomNPCs.manager().register(this)
 
         val instance = instance ?: return
-        scheduler().scheduleNextTick { textDisplayController?.attachTo(this, instance) }
+        scheduler().scheduleNextTick {
+            textDisplayController?.attachTo(this, instance)
+            textDisplayController?.getEntity()?.editEntityMeta<TextDisplayMeta> { meta ->
+                meta.isShadow = true
+                meta.backgroundColor = 0x000000
+            }
+        }
     }
 
     /**
