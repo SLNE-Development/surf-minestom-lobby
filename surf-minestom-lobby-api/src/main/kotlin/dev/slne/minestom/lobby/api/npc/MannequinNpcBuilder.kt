@@ -1,13 +1,14 @@
 package dev.slne.minestom.lobby.api.npc
 
 import codes.bed.minestom.npc.api.NpcInteraction
-import codes.bed.minestom.npc.listener.NpcInteractListener
 import net.kyori.adventure.text.Component
 import net.minestom.server.coordinate.Pos
 import net.minestom.server.coordinate.Vec
-import net.minestom.server.entity.PlayerSkin
+import net.minestom.server.entity.EquipmentSlot
 import net.minestom.server.instance.Instance
+import net.minestom.server.item.ItemStack
 import net.minestom.server.network.player.ResolvableProfile
+import java.util.*
 
 /**
  * Builds and spawns a [MannequinNpc].
@@ -52,11 +53,17 @@ class MannequinNpcBuilder(private val name: String) {
 
     private val interactHandlers = mutableListOf<(NpcInteraction) -> Unit>()
 
+    private val equipments = EnumMap<EquipmentSlot, ItemStack>(EquipmentSlot::class.java)
+
     /**
      * Runs [handler] whenever a player clicks the NPC.
      */
     fun onInteract(handler: (NpcInteraction) -> Unit) {
         interactHandlers += handler
+    }
+
+    fun setEquipment(slot: EquipmentSlot, item: ItemStack) {
+        equipments[slot] = item
     }
 
     @PublishedApi
@@ -68,6 +75,16 @@ class MannequinNpcBuilder(private val name: String) {
             scale = scale,
             hologramOffset = displayNameOffset ?: Vec(0.0, HOLOGRAM_HEIGHT * scale, 0.0),
             description = description,
+
+            // Equipments
+            mainHandItem = equipments[EquipmentSlot.MAIN_HAND] ?: ItemStack.AIR,
+            offHandItem = equipments[EquipmentSlot.OFF_HAND] ?: ItemStack.AIR,
+            helmet = equipments[EquipmentSlot.HELMET] ?: ItemStack.AIR,
+            chestplate = equipments[EquipmentSlot.CHESTPLATE] ?: ItemStack.AIR,
+            leggings = equipments[EquipmentSlot.LEGGINGS] ?: ItemStack.AIR,
+            boots = equipments[EquipmentSlot.BOOTS] ?: ItemStack.AIR,
+            bodyEquipment = equipments[EquipmentSlot.BODY] ?: ItemStack.AIR,
+            saddleEquipment = equipments[EquipmentSlot.SADDLE] ?: ItemStack.AIR,
         )
 
         interactHandlers.forEach { handler ->
