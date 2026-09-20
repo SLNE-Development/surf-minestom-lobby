@@ -9,9 +9,12 @@ import dev.slne.minestom.lobby.api.command.entity.editEntityMeta
 import net.kyori.adventure.text.Component
 import net.minestom.server.coordinate.Vec
 import net.minestom.server.entity.EntityType
+import net.minestom.server.entity.EquipmentSlot
 import net.minestom.server.entity.Player
 import net.minestom.server.entity.attribute.Attribute
 import net.minestom.server.entity.metadata.avatar.MannequinMeta
+import net.minestom.server.inventory.EquipmentHandler
+import net.minestom.server.item.ItemStack
 import net.minestom.server.network.packet.server.play.EntityAttributesPacket
 import net.minestom.server.network.player.ResolvableProfile
 import org.jetbrains.annotations.ApiStatus
@@ -30,6 +33,7 @@ import java.util.*
  * @param description the text the client renders below the mannequin; empty hides the
  *   client's default mannequin label
  */
+@OptIn(ExperimentalVersionOverloading::class)
 class MannequinNpc(
     private val name: String,
     hologramText: Component,
@@ -38,7 +42,18 @@ class MannequinNpc(
     hologramOffset: Vec,
     description: Component,
     uuid: UUID = UUID.randomUUID(),
-) : AbstractNpcEntity(EntityType.MANNEQUIN, uuid) {
+
+    // Equipments
+    @IntroducedAt("1.1.0") private var mainHandItem: ItemStack = ItemStack.AIR,
+    @IntroducedAt("1.1.0") private var offHandItem: ItemStack = ItemStack.AIR,
+
+    @IntroducedAt("1.1.0") private var helmet: ItemStack = ItemStack.AIR,
+    @IntroducedAt("1.1.0") private var chestplate: ItemStack = ItemStack.AIR,
+    @IntroducedAt("1.1.0") private var leggings: ItemStack = ItemStack.AIR,
+    @IntroducedAt("1.1.0") private var boots: ItemStack = ItemStack.AIR,
+    @IntroducedAt("1.1.0") private var bodyEquipment: ItemStack = ItemStack.AIR,
+    @IntroducedAt("1.1.0") private var saddleEquipment: ItemStack = ItemStack.AIR,
+) : AbstractNpcEntity(EntityType.MANNEQUIN, uuid), EquipmentHandler {
 
     init {
         editEntityMeta<MannequinMeta> { meta ->
@@ -84,6 +99,35 @@ class MannequinNpc(
                 )
             )
         }
+    }
+
+    override fun getEquipment(slot: EquipmentSlot) = when (slot) {
+        EquipmentSlot.MAIN_HAND -> mainHandItem
+        EquipmentSlot.OFF_HAND -> offHandItem
+        EquipmentSlot.BOOTS -> boots
+        EquipmentSlot.LEGGINGS -> leggings
+        EquipmentSlot.CHESTPLATE -> chestplate
+        EquipmentSlot.HELMET -> helmet
+        EquipmentSlot.BODY -> bodyEquipment
+        EquipmentSlot.SADDLE -> saddleEquipment
+    }
+
+    override fun setEquipment(
+        slot: EquipmentSlot,
+        newItem: ItemStack
+    ) {
+        when (slot) {
+            EquipmentSlot.MAIN_HAND -> mainHandItem = newItem
+            EquipmentSlot.OFF_HAND -> offHandItem = newItem
+            EquipmentSlot.BOOTS -> boots = newItem
+            EquipmentSlot.LEGGINGS -> leggings = newItem
+            EquipmentSlot.CHESTPLATE -> chestplate = newItem
+            EquipmentSlot.HELMET -> helmet = newItem
+            EquipmentSlot.BODY -> bodyEquipment = newItem
+            EquipmentSlot.SADDLE -> saddleEquipment = newItem
+        }
+
+        syncEquipment(slot)
     }
 
     companion object {
