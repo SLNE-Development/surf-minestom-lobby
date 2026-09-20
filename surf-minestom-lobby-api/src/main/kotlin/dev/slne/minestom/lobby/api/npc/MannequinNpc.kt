@@ -91,6 +91,8 @@ class MannequinNpc(
     override fun updateNewViewer(player: Player) {
         super.updateNewViewer(player)
 
+        getEquipmentsPacket()?.let(player::sendPacket)
+
         if (scale != 1.0) {
             player.sendPacket(
                 EntityAttributesPacket(
