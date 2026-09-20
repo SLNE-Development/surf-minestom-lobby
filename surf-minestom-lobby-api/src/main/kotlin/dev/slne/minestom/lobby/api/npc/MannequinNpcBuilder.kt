@@ -84,7 +84,7 @@ class MannequinNpcBuilder(private val name: String) {
             leggings = equipments[EquipmentSlot.LEGGINGS] ?: ItemStack.AIR,
             boots = equipments[EquipmentSlot.BOOTS] ?: ItemStack.AIR,
             bodyEquipment = equipments[EquipmentSlot.BODY] ?: ItemStack.AIR,
-            saddleEquipment = equipments[EquipmentSlot.SADDLE] ?: ItemStack.AIR
+            saddleEquipment = equipments[EquipmentSlot.SADDLE] ?: ItemStack.AIR,
         )
 
         interactHandlers.forEach { handler ->
