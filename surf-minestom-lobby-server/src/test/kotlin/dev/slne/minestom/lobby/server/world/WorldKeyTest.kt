@@ -1,8 +1,8 @@
 package dev.slne.minestom.lobby.server.world
 
-import dev.slne.minestom.lobby.api.instance.setWorldKey
-import dev.slne.minestom.lobby.api.instance.worldKey
-import dev.slne.minestom.lobby.api.key.SurfKey
+import dev.slne.minestom.lobby.server.world.setWorldKey
+import dev.slne.minestom.lobby.server.world.worldKey
+import dev.slne.minestom.lobby.server.key.SurfKey
 import net.kyori.adventure.key.InvalidKeyException
 import net.kyori.adventure.key.Key
 import net.minestom.server.MinecraftServer

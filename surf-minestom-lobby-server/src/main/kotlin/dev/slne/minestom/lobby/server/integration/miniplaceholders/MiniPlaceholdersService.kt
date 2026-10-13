@@ -1,20 +1,16 @@
 package dev.slne.minestom.lobby.server.integration.miniplaceholders
 
-import com.google.inject.Inject
 import com.google.inject.Singleton
-import dev.slne.minestom.lobby.server.integration.luckperms.LuckPermsService
 import dev.slne.minestom.lobby.server.lifecycle.LobbyService
+import dev.slne.surf.api.minestom.permission.MinestomPermissions
 import io.github.miniplaceholders.minestom.MinestomMiniPlaceholders
 import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.util.TriState
-import net.luckperms.api.util.Tristate
 import net.minestom.server.entity.Player
 import kotlin.io.path.Path
 
 @Singleton
-class MiniPlaceholdersService @Inject constructor(
-    private val luckPerms: LuckPermsService,
-) : LobbyService {
+class MiniPlaceholdersService : LobbyService {
 
     override suspend fun start() {
         MinestomMiniPlaceholders.initialize(DATA_DIRECTORY, ::permissionValue)
@@ -23,13 +19,7 @@ class MiniPlaceholdersService @Inject constructor(
     private fun permissionValue(sender: Audience, permission: String): TriState {
         if (sender !is Player) return TriState.TRUE
 
-        return luckPerms.hasPermission(sender.uuid, permission).toTriState()
-    }
-
-    private fun Tristate.toTriState() = when (this) {
-        Tristate.TRUE -> TriState.TRUE
-        Tristate.FALSE -> TriState.FALSE
-        Tristate.UNDEFINED -> TriState.NOT_SET
+        return MinestomPermissions.permissionValue(sender, permission)
     }
 
     private companion object {

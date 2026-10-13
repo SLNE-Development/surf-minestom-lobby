@@ -1,7 +1,7 @@
 package dev.slne.minestom.lobby.server.command.impl
 
-import dev.slne.minestom.lobby.api.command.commandapi.dsl.anyExecutorSuspend
-import dev.slne.minestom.lobby.api.command.commandapi.dsl.commandAPICommand
+import dev.slne.surf.api.minestom.command.dsl.anyExecutorSuspend
+import dev.slne.surf.api.minestom.command.dsl.commandAPICommand
 import dev.slne.minestom.lobby.server.permission.LobbyPermissions
 import dev.slne.minestom.lobby.server.version.LOBBY_DOWNLOAD_URL
 import dev.slne.minestom.lobby.server.version.LobbyBuildInfo

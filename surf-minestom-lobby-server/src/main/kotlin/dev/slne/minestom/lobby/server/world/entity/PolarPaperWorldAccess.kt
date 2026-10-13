@@ -5,10 +5,13 @@ import net.hollowcube.polar.PolarWorldAccess
 import net.kyori.adventure.nbt.BinaryTagIO
 import net.kyori.adventure.nbt.CompoundBinaryTag
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger
+import net.minestom.server.MinecraftServer
 import net.minestom.server.coordinate.Pos
 import net.minestom.server.instance.Chunk
 import net.minestom.server.network.NetworkBuffer
 import net.minestom.server.network.NetworkBuffer.*
+import net.minestom.server.registry.RegistryKey
+import net.minestom.server.world.biome.Biome
 
 class PolarPaperWorldAccess : PolarWorldAccess {
     private companion object {
@@ -25,6 +28,13 @@ class PolarPaperWorldAccess : PolarWorldAccess {
         val nbt: CompoundBinaryTag,
         val position: Pos
     )
+
+    /**
+     * Same as Polar's default, which calls `RegistryKey.unsafeOf` - renamed to `RegistryKey.of` in
+     * Minestom 26.3, so Polar 1.16.0 fails with a NoSuchMethodError there.
+     */
+    override fun getBiomeId(name: String): Int =
+        MinecraftServer.getBiomeRegistry().getId(RegistryKey.of<Biome>(name))
 
     override fun loadChunkData(chunk: Chunk, userData: NetworkBuffer?) {
         if (userData == null) return

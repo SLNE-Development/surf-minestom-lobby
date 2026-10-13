@@ -9,6 +9,10 @@ import org.spongepowered.asm.launch.MixinBootstrap;
 import org.spongepowered.asm.mixin.MixinEnvironment;
 import org.spongepowered.asm.mixin.Mixins;
 
+/**
+ * Called by the surf bootstrap agent once the libraries are on the class path, see
+ * {@code Surf-Delegate-Agent-Classes} in the server jar's manifest.
+ */
 @NullMarked
 public final class LobbyAgent {
 
@@ -17,8 +21,6 @@ public final class LobbyAgent {
 
   public static void agentmain(String agentArgs, Instrumentation instrumentation) {
     try {
-      DependencyInstaller.install(instrumentation);
-
       InstrumentationMixinService.setInstrumentation(instrumentation);
       MixinBootstrap.init();
       MixinExtrasBootstrap.init();

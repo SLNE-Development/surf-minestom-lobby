@@ -2,10 +2,10 @@ package dev.slne.minestom.lobby.server.world
 
 import com.google.inject.Inject
 import com.google.inject.Singleton
-import dev.slne.minestom.lobby.api.extension.DimensionTypeRegistry
-import dev.slne.minestom.lobby.api.extension.buildInstance
-import dev.slne.minestom.lobby.api.instance.setWorldKey
-import dev.slne.minestom.lobby.api.key.SurfKey
+import dev.slne.surf.api.minestom.extension.DimensionTypeRegistry
+import dev.slne.surf.api.minestom.extension.buildInstance
+import dev.slne.minestom.lobby.server.world.setWorldKey
+import dev.slne.minestom.lobby.server.key.SurfKey
 import dev.slne.minestom.lobby.server.config.ServerConfig
 import dev.slne.minestom.lobby.server.database.world.LobbyWorldRepository
 import dev.slne.minestom.lobby.server.lifecycle.LobbyService

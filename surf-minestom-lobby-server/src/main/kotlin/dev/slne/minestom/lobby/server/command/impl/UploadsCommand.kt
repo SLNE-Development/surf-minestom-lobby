@@ -1,7 +1,7 @@
 package dev.slne.minestom.lobby.server.command.impl
 
-import dev.slne.minestom.lobby.api.command.commandapi.dsl.*
-import dev.slne.minestom.lobby.api.command.commandapi.suggestion.SuggestionInfo
+import dev.slne.surf.api.minestom.command.dsl.*
+import dev.slne.surf.api.minestom.command.suggestion.SuggestionInfo
 import dev.slne.minestom.lobby.server.permission.LobbyPermissions
 import dev.slne.minestom.lobby.server.upload.UploadHandler
 import dev.slne.minestom.lobby.server.upload.UploadService

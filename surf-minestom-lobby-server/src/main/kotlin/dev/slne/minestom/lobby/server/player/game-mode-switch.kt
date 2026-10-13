@@ -1,9 +1,14 @@
 package dev.slne.minestom.lobby.server.player
 
+import dev.slne.surf.api.minestom.server.SurfMinestomServer
+import dev.slne.surf.api.minestom.server.visibility.PlayerVisibilityFeature
 import net.minestom.server.entity.GameMode
 import net.minestom.server.entity.Player
 import net.minestom.server.entity.PlayerHand
 import net.minestom.server.potion.PotionEffect
+import java.util.function.Predicate
+
+private val ALWAYS_VIEWABLE = Predicate<Player> { true }
 
 /**
  * Completes a switch from [previousGameMode] to the player's current [Player.getGameMode] with the
@@ -26,10 +31,19 @@ internal fun Player.completeGameModeSwitch(previousGameMode: GameMode) {
         }
 
         isInvisible = hasEffect(PotionEffect.INVISIBILITY)
-        updateViewableRule(null)
+        updateViewableRule(defaultViewableRule())
     }
 
     refreshSpectatorRules()
+}
+
+/**
+ * The viewable rule a player has outside of spectator mode: the one the player visibility feature
+ * installs while it limits the visible players, none otherwise.
+ */
+private fun defaultViewableRule(): Predicate<Player>? {
+    val surfApi = runCatching { SurfMinestomServer.instance }.getOrNull() ?: return null
+    return ALWAYS_VIEWABLE.takeIf { surfApi.feature(PlayerVisibilityFeature.ID) != null }
 }
 
 /** Re-runs the rule of every other spectator, which decides whether this player may see them. */

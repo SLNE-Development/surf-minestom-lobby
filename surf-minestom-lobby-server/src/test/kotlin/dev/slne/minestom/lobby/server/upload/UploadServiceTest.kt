@@ -4,7 +4,7 @@ import com.google.inject.AbstractModule
 import com.google.inject.Guice
 import com.google.inject.ProvisionException
 import com.google.inject.Singleton
-import dev.slne.minestom.lobby.api.di.bindIntoSet
+import dev.slne.minestom.lobby.server.di.bindIntoSet
 import java.nio.file.Path
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull

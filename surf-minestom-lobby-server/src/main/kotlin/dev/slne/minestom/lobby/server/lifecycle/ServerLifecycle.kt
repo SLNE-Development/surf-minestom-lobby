@@ -2,15 +2,9 @@ package dev.slne.minestom.lobby.server.lifecycle
 
 import com.google.inject.Inject
 import com.google.inject.Singleton
-import dev.slne.minestom.lobby.server.chat.ChatService
 import dev.slne.minestom.lobby.server.codeofconduct.CodeOfConductService
-import dev.slne.minestom.lobby.server.command.CommandService
-import dev.slne.minestom.lobby.server.command.commandapi.MinestomCommandAPIService
 import dev.slne.minestom.lobby.server.database.LobbyDatabase
-import dev.slne.minestom.lobby.server.event.LobbyEventService
-import dev.slne.minestom.lobby.server.integration.luckperms.LuckPermsService
 import dev.slne.minestom.lobby.server.integration.miniplaceholders.MiniPlaceholdersService
-import dev.slne.minestom.lobby.server.integration.spark.SparkService
 import dev.slne.minestom.lobby.server.permission.PermissionLevelService
 import dev.slne.minestom.lobby.server.player.LobbyPlayerService
 import dev.slne.minestom.lobby.server.upload.UploadService
@@ -18,36 +12,30 @@ import dev.slne.minestom.lobby.server.world.LobbyWorldService
 import net.minestom.server.MinecraftServer.LOGGER
 import java.util.concurrent.atomic.AtomicBoolean
 
+/**
+ * Starts the lobby's own services in order and stops them in reverse.
+ *
+ * Runs as [LobbyFeature] inside the surf api, which provides everything else (commands, chat,
+ * LuckPerms, spark, plugins, ...).
+ */
 @Singleton
 class ServerLifecycle @Inject constructor(
-    luckPerms: LuckPermsService,
     miniPlaceholders: MiniPlaceholdersService,
-    spark: SparkService,
     permissionLevel: PermissionLevelService,
     database: LobbyDatabase,
     uploads: UploadService,
     codeOfConduct: CodeOfConductService,
     world: LobbyWorldService,
     players: LobbyPlayerService,
-    commandApi: MinestomCommandAPIService,
-    commands: CommandService,
-    chat: ChatService,
-    events: LobbyEventService,
 ) {
-    private val services = orderedLobbyServices(
-        events,
-        luckPerms,
+    private val services = listOf(
         miniPlaceholders,
-        spark,
         permissionLevel,
         database,
         uploads,
         codeOfConduct,
         world,
         players,
-        commandApi,
-        commands,
-        chat,
     )
 
     private val started = ArrayDeque<LobbyService>()
@@ -55,7 +43,7 @@ class ServerLifecycle @Inject constructor(
 
     suspend fun start() {
         check(running.compareAndSet(false, true)) {
-            "Core server components have already been started"
+            "Lobby services have already been started"
         }
 
         for (service in services) {
@@ -98,33 +86,3 @@ class ServerLifecycle @Inject constructor(
         failure?.let { throw it }
     }
 }
-
-internal fun orderedLobbyServices(
-    events: LobbyService,
-    luckPerms: LobbyService,
-    miniPlaceholders: LobbyService,
-    spark: LobbyService,
-    permissionLevel: LobbyService,
-    database: LobbyService,
-    uploads: LobbyService,
-    codeOfConduct: LobbyService,
-    world: LobbyService,
-    players: LobbyService,
-    commandApi: LobbyService,
-    commands: LobbyService,
-    chat: LobbyService,
-): List<LobbyService> = listOf(
-    events,
-    luckPerms,
-    miniPlaceholders,
-    spark,
-    permissionLevel,
-    database,
-    uploads,
-    codeOfConduct,
-    world,
-    players,
-    commandApi,
-    commands,
-    chat,
-)

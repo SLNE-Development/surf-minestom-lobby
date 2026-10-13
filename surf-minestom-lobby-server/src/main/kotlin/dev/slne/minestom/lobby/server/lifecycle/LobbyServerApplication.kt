@@ -2,19 +2,29 @@ package dev.slne.minestom.lobby.server.lifecycle
 
 import com.google.inject.Inject
 import com.google.inject.Singleton
+import dev.slne.minestom.lobby.server.codeofconduct.CodeOfConductService
+import dev.slne.minestom.lobby.server.command.DefaultCommandRegistrar
 import dev.slne.minestom.lobby.server.config.ServerConfig
-import dev.slne.minestom.lobby.server.console.LobbyTerminalConsole
-import dev.slne.minestom.lobby.server.plugin.MinestomPluginManager
 import dev.slne.minestom.lobby.server.version.LobbyVersionService
 import dev.slne.minestom.lobby.server.version.logVersionBanner
 import dev.slne.minestom.lobby.server.world.LobbyWorldService
+import dev.slne.surf.api.minestom.event.EventRegistrar
+import dev.slne.surf.api.minestom.server.SurfMinestomServer
+import dev.slne.surf.api.minestom.server.chat.withSignedChat
+import dev.slne.surf.api.minestom.server.console.withConsole
+import dev.slne.surf.api.minestom.server.luckperms.withLuckPerms
+import dev.slne.surf.api.minestom.server.npc.withNpcLib
+import dev.slne.surf.api.minestom.server.plugins.withPlugins
+import dev.slne.surf.api.minestom.server.spark.withSpark
+import dev.slne.surf.api.minestom.server.surfMinestomServer
+import dev.slne.surf.api.minestom.server.visibility.withPlayerVisibility
 import kotlinx.coroutines.runBlocking
 import net.minestom.server.MinecraftServer
 import net.minestom.server.MinecraftServer.LOGGER
 import org.jetbrains.annotations.Blocking
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.thread
-import kotlin.system.exitProcess
+import dev.slne.minestom.lobby.server.bootstrap.exitFlushingLogs
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.nanoseconds
 
@@ -23,14 +33,14 @@ class LobbyServerApplication @Inject constructor(
     private val minecraftServer: MinecraftServer,
     private val config: ServerConfig,
     private val serverLifecycle: ServerLifecycle,
-    private val pluginManager: MinestomPluginManager,
+    private val registrars: Set<@JvmSuppressWildcards EventRegistrar>,
+    private val commands: DefaultCommandRegistrar,
+    private val codeOfConduct: CodeOfConductService,
     private val versionService: LobbyVersionService,
     private val worldService: LobbyWorldService,
 ) {
     private val started = AtomicBoolean()
     private val stopped = AtomicBoolean()
-
-    private var consoleThread: Thread? = null
 
     suspend fun start(startupStartedAt: Long) {
         check(started.compareAndSet(false, true)) {
@@ -38,13 +48,11 @@ class LobbyServerApplication @Inject constructor(
         }
 
         try {
-            LOGGER.info("Initializing core server components.")
-            serverLifecycle.start()
-            LOGGER.info("Core server components initialized.")
+            LOGGER.info("Starting the surf api and the lobby services.")
+            startSurfApi()
+            LOGGER.info("Surf api and lobby services started.")
 
-            LOGGER.info("Starting server plugins.")
-            pluginManager.startAll()
-            LOGGER.info("Server plugins started.")
+            commands.register()
 
             LOGGER.info("Warming chunk packets.")
             worldService.warmChunkPackets()
@@ -59,8 +67,6 @@ class LobbyServerApplication @Inject constructor(
             )
             minecraftServer.start(config.address.host, config.address.port)
 
-            startConsole()
-
             val startupDuration =
                 (System.nanoTime() - startupStartedAt).nanoseconds.inWholeMilliseconds.milliseconds
 
@@ -71,29 +77,10 @@ class LobbyServerApplication @Inject constructor(
 
             logVersionBanner(versionService, LOGGER)
         } catch (startupFailure: Throwable) {
-            LOGGER.error(
-                "Failed to start Surf Minestom Lobby.",
-                startupFailure,
-            )
-
-            runCatching {
-                LOGGER.info("Stopping plugins after failed startup.")
-                pluginManager.stopAll()
-            }.onFailure {
+            runCatching { stop() }.onFailure {
                 startupFailure.addSuppressed(it)
                 LOGGER.error(
-                    "Failed to stop plugins after startup failure.",
-                    it,
-                )
-            }
-
-            runCatching {
-                LOGGER.info("Shutting down core components after failed startup.")
-                serverLifecycle.stop()
-            }.onFailure {
-                startupFailure.addSuppressed(it)
-                LOGGER.error(
-                    "Failed to shut down core components after startup failure.",
+                    "Failed to shut down after startup failure.",
                     it,
                 )
             }
@@ -102,17 +89,45 @@ class LobbyServerApplication @Inject constructor(
         }
     }
 
-    private fun startConsole() {
-        val console = LobbyTerminalConsole {
-            shutdownAndExit("console")
-        }
+    private fun startSurfApi() {
+        surfMinestomServer {
+            maxPlayers = config.maxPlayers
 
-        consoleThread = Thread(
-            console::start,
-            "surf-minestom-lobby-console",
-        ).apply {
-            isDaemon = true
-            start()
+            withConfigurationPhase {
+                codeOfConduct { player -> codeOfConduct.textFor(player.locale) }
+            }
+
+            withLuckPerms()
+            withSignedChat {
+                enforceSecureProfile = config.chat.enforceSecureProfile
+                chatSpamThresholdSeconds = config.chat.chatSpamThresholdSeconds
+                commandSpamThresholdSeconds = config.chat.commandSpamThresholdSeconds
+            }
+            withSpark {
+                profileOnStartup = config.performance.spark.profileOnStartup
+            }
+            withNpcLib()
+
+            val visibility = config.playerVisibility
+            if (visibility.enabled) {
+                withPlayerVisibility {
+                    maxVisible = visibility.maxVisible
+                    activateAt = visibility.activateAt
+                    deactivateBelow = visibility.deactivateBelow
+                    refreshIntervalTicks = visibility.refreshIntervalTicks
+                    retentionDistanceFactor = visibility.retentionDistanceFactor
+                }
+            }
+
+            withConsole {
+                threadName = "surf-minestom-lobby-console"
+                onShutdown = { shutdownAndExit("console") }
+            }
+
+            install(LobbyFeature(serverLifecycle))
+            withPlugins()
+
+            listeners(*registrars.toTypedArray())
         }
     }
 
@@ -137,9 +152,13 @@ class LobbyServerApplication @Inject constructor(
             }
         }
 
-        exitProcess(0)
+        exitFlushingLogs(0)
     }
 
+    /**
+     * Stops the server, which disables the surf api together with the plugins and the lobby
+     * services.
+     */
     suspend fun stop() {
         if (!stopped.compareAndSet(false, true)) {
             return
@@ -157,36 +176,24 @@ class LobbyServerApplication @Inject constructor(
                     "Failed to stop the Minestom server cleanly.",
                     currentFailure,
                 )
-                failure = currentFailure
+                failure = failure.alsoSuppress(currentFailure)
             }
         }
 
+        // Runs on its own when the server stops, but not when it never started
         try {
-            LOGGER.info("Stopping server plugins.")
-            pluginManager.stopAll()
-            LOGGER.info("Server plugins stopped.")
+            runCatching { SurfMinestomServer.instance }.getOrNull()?.shutdown()
         } catch (currentFailure: Throwable) {
-            LOGGER.error("Failed to stop server plugins.", currentFailure)
-
-            if (failure == null) {
-                failure = currentFailure
-            } else {
-                failure.addSuppressed(currentFailure)
-            }
+            LOGGER.error("Failed to shut down the surf api.", currentFailure)
+            failure = failure.alsoSuppress(currentFailure)
         }
 
+        // The surf api already stopped them, unless it failed to load after starting them
         try {
-            LOGGER.info("Shutting down core server components.")
             serverLifecycle.stop()
-            LOGGER.info("Core server components shut down.")
         } catch (currentFailure: Throwable) {
-            LOGGER.error("Failed to shut down core server components.", currentFailure)
-
-            if (failure == null) {
-                failure = currentFailure
-            } else {
-                failure.addSuppressed(currentFailure)
-            }
+            LOGGER.error("Failed to shut down the lobby services.", currentFailure)
+            failure = failure.alsoSuppress(currentFailure)
         }
 
         if (failure == null) {
@@ -194,6 +201,12 @@ class LobbyServerApplication @Inject constructor(
         } else {
             throw failure
         }
+    }
+
+    private fun Throwable?.alsoSuppress(next: Throwable): Throwable {
+        if (this == null) return next
+        addSuppressed(next)
+        return this
     }
 
     private fun installShutdownHook() {

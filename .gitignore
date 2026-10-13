@@ -7,6 +7,9 @@ out/
 # Created when the server (or a test that boots one) runs from a project directory
 logs/
 
+# Working directory of the runServer task
+/surf-minestom-lobby-server/run/
+
 # Kotlin incremental compilation cache
 .kotlin/
 
@@ -14,9 +17,3 @@ logs/
 /.projectatlas/*
 !/.projectatlas/config.toml
 !/.projectatlas/projectatlas-nonsource-files.toon
-
-# Scratch files of .github/workflows/check-plugin-updates.yml
-/plugin-versions.new
-/plugin-versions.old
-/plugin-versions.diff
-/dispatch.out

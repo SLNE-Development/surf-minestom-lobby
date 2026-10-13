@@ -1,8 +1,14 @@
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 
-plugins {
-    alias(libs.plugins.kotlin.jvm) apply false
-    alias(libs.plugins.shadow) apply false
+buildscript {
+    repositories {
+        gradlePluginPortal()
+        mavenLocal()
+        maven("https://reposilite.slne.dev/releases")
+    }
+    dependencies {
+        classpath("dev.slne.surf.api:surf-api-gradle-plugin:+")
+    }
 }
 
 val projectVersion = providers.gradleProperty("projectVersion").get()
@@ -10,6 +16,10 @@ val projectVersion = providers.gradleProperty("projectVersion").get()
 allprojects {
     group = "dev.slne.minestom.lobby"
     version = projectVersion
+
+    repositories {
+        mavenLocal()
+    }
 }
 
 subprojects {

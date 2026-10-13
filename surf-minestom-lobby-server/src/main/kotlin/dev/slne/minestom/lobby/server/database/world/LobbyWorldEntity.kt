@@ -1,6 +1,6 @@
 package dev.slne.minestom.lobby.server.database.world
 
-import dev.slne.minestom.lobby.api.key.SurfKey
+import dev.slne.minestom.lobby.server.key.SurfKey
 import org.komapper.annotation.KomapperColumn
 import org.komapper.annotation.KomapperEntity
 import org.komapper.annotation.KomapperId

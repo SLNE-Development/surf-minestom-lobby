@@ -1,8 +1,8 @@
 package dev.slne.minestom.lobby.server.command.impl
 
 import com.google.inject.Provider
-import dev.slne.minestom.lobby.api.command.commandapi.dsl.anyExecutor
-import dev.slne.minestom.lobby.api.command.commandapi.dsl.commandAPICommand
+import dev.slne.surf.api.minestom.command.dsl.anyExecutor
+import dev.slne.surf.api.minestom.command.dsl.commandAPICommand
 import dev.slne.minestom.lobby.server.lifecycle.LobbyServerApplication
 import dev.slne.minestom.lobby.server.permission.LobbyPermissions
 import dev.slne.surf.api.core.messages.adventure.sendText

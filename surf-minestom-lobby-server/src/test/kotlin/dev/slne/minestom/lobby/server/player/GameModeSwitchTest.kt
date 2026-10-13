@@ -81,7 +81,7 @@ class GameModeSwitchTest {
         assertFalse(player.isInvisible, "an ordinary mode switch made the player invisible")
     }
 
-    /** Applies [gameMode] the way [LobbyPlayerImpl] does. */
+    /** Applies [gameMode] the way [LobbyPlayer] does. */
     private fun Player.switchGameMode(gameMode: GameMode) {
         val previousGameMode = this.gameMode
 
