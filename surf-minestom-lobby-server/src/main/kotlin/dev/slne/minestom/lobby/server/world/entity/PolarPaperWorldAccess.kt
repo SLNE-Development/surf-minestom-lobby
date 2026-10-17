@@ -1,14 +1,18 @@
 package dev.slne.minestom.lobby.server.world.entity
 
+import dev.slne.surf.api.minestom.extension.BiomeRegistry
 import it.unimi.dsi.fastutil.objects.ObjectArrayList
 import net.hollowcube.polar.PolarWorldAccess
 import net.kyori.adventure.nbt.BinaryTagIO
 import net.kyori.adventure.nbt.CompoundBinaryTag
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger
+import net.minestom.server.MinecraftServer
 import net.minestom.server.coordinate.Pos
 import net.minestom.server.instance.Chunk
 import net.minestom.server.network.NetworkBuffer
 import net.minestom.server.network.NetworkBuffer.*
+import net.minestom.server.registry.RegistryKey
+import net.minestom.server.world.biome.Biome
 
 class PolarPaperWorldAccess : PolarWorldAccess {
     private companion object {
@@ -25,6 +29,15 @@ class PolarPaperWorldAccess : PolarWorldAccess {
         val nbt: CompoundBinaryTag,
         val position: Pos
     )
+
+    /**
+     * Resolves a biome id without Polar's default, which calls `RegistryKey.unsafeOf` (removed in Minestom 26.3).
+     *
+     * Returns `-1` for biomes missing from the registry, as Polar expects.
+     */
+    override fun getBiomeId(name: String): Int {
+        return BiomeRegistry.getId(RegistryKey.of(name))
+    }
 
     override fun loadChunkData(chunk: Chunk, userData: NetworkBuffer?) {
         if (userData == null) return

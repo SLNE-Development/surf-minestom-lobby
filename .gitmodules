@@ -1,3 +1,0 @@
-[submodule "vendor/LuckPerms-Upstream"]
-	path = vendor/LuckPerms-Upstream
-	url = git@github.com:TropicalShadow/LuckPerms.git

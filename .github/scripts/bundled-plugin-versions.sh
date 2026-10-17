@@ -16,7 +16,7 @@ set -euo pipefail
 
 repo_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)
 
-# Mirrors the repositories in surf-minestom-lobby-server/build.gradle.kts.
+# Mirrors the Maven repositories of the server build (surf-minestom-lobby-server/build.gradle.kts).
 reposilite_repos=(
     https://reposilite.slne.dev/public
     https://reposilite.slne.dev/releases
@@ -57,7 +57,8 @@ catalog_modules=$(
     die "no '+' versioned libraries in gradle/libs.versions.toml - did the catalog format change?"
 
 # Marker artifacts of `id("...") version "+"` Gradle plugins. Not bundled
-# themselves, but they define the jar's relocations.
+# themselves, but the surf-api server plugin defines how the jar is built (shading,
+# library download, plugin discovery), so a new release changes the output.
 plugin_modules=$(
     grep -hoE 'id\("[^"]+"\) version "\+"' \
         "$repo_root"/*.gradle.kts "$repo_root"/*/*.gradle.kts |

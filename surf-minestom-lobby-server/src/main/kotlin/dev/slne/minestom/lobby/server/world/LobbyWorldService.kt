@@ -2,15 +2,13 @@ package dev.slne.minestom.lobby.server.world
 
 import com.google.inject.Inject
 import com.google.inject.Singleton
-import dev.slne.minestom.lobby.api.extension.DimensionTypeRegistry
-import dev.slne.minestom.lobby.api.extension.buildInstance
-import dev.slne.minestom.lobby.api.instance.setWorldKey
-import dev.slne.minestom.lobby.api.key.SurfKey
 import dev.slne.minestom.lobby.server.config.ServerConfig
 import dev.slne.minestom.lobby.server.database.world.LobbyWorldRepository
 import dev.slne.minestom.lobby.server.lifecycle.LobbyService
 import dev.slne.minestom.lobby.server.world.block.LobbyBlockHandlers
 import dev.slne.minestom.lobby.server.world.entity.PolarPaperWorldAccess
+import dev.slne.surf.api.minestom.extension.DimensionTypeRegistry
+import dev.slne.surf.api.minestom.extension.buildInstance
 import it.unimi.dsi.fastutil.objects.ObjectArrayList
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -20,10 +18,10 @@ import kotlinx.coroutines.withContext
 import net.hollowcube.polar.PolarLoader
 import net.hollowcube.polar.PolarReader
 import net.minestom.server.MinecraftServer
-import net.minestom.server.ServerFlag
 import net.minestom.server.instance.Chunk
 import net.minestom.server.instance.InstanceContainer
 import net.minestom.server.instance.LightingChunk
+import net.minestom.server.property.ServerProperties
 import net.minestom.server.world.DimensionType
 import java.util.concurrent.CompletableFuture
 import kotlin.time.Duration.Companion.milliseconds
@@ -80,7 +78,7 @@ class LobbyWorldService @Inject constructor(
         val required = requiredChunks ?: return
         val instance = this.instance
 
-        if (!ServerFlag.CACHED_PACKET) {
+        if (!ServerProperties.CACHED_PACKET.get()) {
             MinecraftServer.LOGGER.info("Packet caching is disabled, skipping the chunk packet warmup.")
             return
         }

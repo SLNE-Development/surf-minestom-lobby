@@ -1,17 +1,5 @@
-import com.github.jengelman.gradle.plugins.shadow.relocation.SimpleRelocator
-import com.github.jengelman.gradle.plugins.shadow.transformers.Log4j2PluginsCacheFileTransformer
-import xyz.jpenilla.gremlin.gradle.ShadowGremlin
-
 plugins {
-    application
-    `maven-publish`
-    alias(libs.plugins.kotlin.jvm)
-    alias(libs.plugins.ksp)
-    alias(libs.plugins.shadow)
-    alias(libs.plugins.gremlim)
-
-    id("dev.slne.surf.api.gradle.minestom-relocations") version "+"
-    kotlin("kapt")
+    id("dev.slne.surf.api.gradle.minestom-server") version "+"
 }
 
 val internalPlugins = providers.gradleProperty("internalPlugins")
@@ -21,7 +9,6 @@ val internalPlugins = providers.gradleProperty("internalPlugins")
 repositories {
     maven("https://reposilite.slne.dev/public") { name = "slne-repository-public" }
     maven("https://reposilite.slne.dev/releases") { name = "slne-repository-releases" }
-    maven("https://repo.lucko.me/")
 
     if (internalPlugins) {
         val githubUser = providers.gradleProperty("gpr.user")
@@ -78,110 +65,72 @@ repositories {
     }
 }
 
-configurations.compileOnly {
-    extendsFrom(configurations.runtimeDownload.get())
-}
+surfMinestomServerApi {
+    mainClass("dev.slne.minestom.lobby.MainKt")
 
-configurations.runtimeClasspath {
-    exclude(group = "com.google.code.gson", module = "gson")
-    exclude(group = "com.google.guava", module = "guava")
-    exclude(group = "com.github.ben-manes.caffeine", module = "caffeine")
-    exclude(group = "net.bytebuddy", module = "byte-buddy")
-    exclude(group = "org.checkerframework", module = "checker-qual")
-    exclude(group = "org.jetbrains", module = "annotations")
-    exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core")
-    exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core-jvm")
+    // surf-api and the plugins are downloaded on the first start like every other library, which
+    // keeps the server jar small
+    downloadSurfModules = true
+
+    withSignedChat()
+    withLuckPerms()
+    withSpark()
+    withNpcLib()
+    withPlayerVisibility()
+    withConsole()
+    withPlugins()
 }
 
 dependencies {
-    implementation(projects.surfMinestomLobbyApi)
-
-    runtimeDownload(libs.minestom)
-    runtimeDownload(libs.guice)
-    runtimeDownload(libs.guice.assistedinject)
-    implementation(libs.coroutines.core)
-    implementation(libs.bundles.log4j)
-    implementation(libs.slf4j.api)
-    implementation(libs.terminal.console.appender)
-    runtimeDownload(libs.fastutil)
-    compileOnly(libs.flare.fastutil) // Provided by minestom
-    runtimeDownload(libs.polar)
-    runtimeDownload(libs.npc)
-    runtimeDownload(libs.brigadier)
-    runtimeDownload(libs.adventure.text.minimessage)
-    runtimeDownload(libs.mini.placeholders.minestom) {
+    // Also added by the Gradle plugin; declared here so that the plugin update check sees surf-api releases
+    implementation(libs.surf.api.minestom.server)
+    implementation(libs.guice)
+    implementation(libs.polar)
+    implementation(libs.mini.placeholders.minestom) {
         isTransitive = false
     }
 
-    runtimeDownload(libs.komapper.annotation)
-    runtimeDownload(libs.komapper.jdbc)
-    runtimeDownload(libs.komapper.slf4j)
+    implementation(libs.komapper.annotation)
+    implementation(libs.komapper.jdbc)
+    implementation(libs.komapper.slf4j)
     ksp(libs.komapper.processor)
-    runtimeDownload(libs.komapper.dialect.mariadb.jdbc)
-    runtimeDownload(libs.komapper.dialect.postgresql.jdbc)
-    runtimeDownload(libs.hikari)
-    runtimeDownload(libs.mariadb.jdbc)
-    runtimeDownload(libs.postgresql.jdbc)
+    implementation(libs.komapper.dialect.mariadb.jdbc)
+    implementation(libs.komapper.dialect.postgresql.jdbc)
+    implementation(libs.hikari)
+    implementation(libs.mariadb.jdbc)
+    implementation(libs.postgresql.jdbc)
 
-    implementation(libs.fabric.mixin)
-    annotationProcessor(libs.fabric.mixin)
-    implementation(libs.mixin.extra)
-    annotationProcessor(libs.mixin.extra)
-
-    runtimeDownload(libs.configurate.yaml)
-    runtimeDownload(libs.configurate.kotlin)
-    implementation(libs.luckperms.minestom)
-    implementation(libs.spark.minestom)
-
-    runtimeDownload(libs.surf.api.minestom)
-    runtimeDownload(libs.surf.redis.minestom) {
+    runtimeOnly(libs.surf.redis.minestom) {
         artifact { classifier = "all" }
     }
-    runtimeDownload(libs.surf.rabbitmq.minestom)
-    runtimeDownload(libs.surf.core.minestom)
-    runtimeDownload(libs.surf.settings.minestom)
-    runtimeDownload(libs.surf.punish.minestom)
-    runtimeDownload(libs.surf.chat.minestom)
-    runtimeDownload(libs.surf.bitmap.provider.minestom)
-    runtimeDownload(libs.surf.clan.minestom)
-    runtimeDownload(libs.surf.transaction.minestom)
-    runtimeDownload(libs.surf.queue.minestom)
-    runtimeDownload(libs.surf.playtime.minestom)
-    runtimeDownload(libs.surf.jumppad.minestom)
-    runtimeDownload(libs.surf.parkour.minestom)
-    runtimeDownload(libs.surf.profile.minestom)
-    runtimeDownload(libs.surf.content.creator.minestom)
-    runtimeDownload(libs.surf.friends.minestom)
-    runtimeDownload(libs.surf.social.minestom)
-    runtimeDownload(libs.surf.tab.minestom)
-    runtimeDownload(libs.surf.nametag.minestom)
-    runtimeDownload(libs.surf.teleporter.minestom)
-    runtimeDownload(libs.surf.trophy.minestom)
-    runtimeDownload(libs.surf.lobby.minestom)
+    runtimeOnly(libs.surf.rabbitmq.minestom)
+    runtimeOnly(libs.surf.core.minestom)
+    runtimeOnly(libs.surf.settings.minestom)
+    runtimeOnly(libs.surf.punish.minestom)
+    runtimeOnly(libs.surf.chat.minestom)
+    runtimeOnly(libs.surf.bitmap.provider.minestom)
+    runtimeOnly(libs.surf.clan.minestom)
+    runtimeOnly(libs.surf.transaction.minestom)
+    runtimeOnly(libs.surf.queue.minestom)
+    runtimeOnly(libs.surf.playtime.minestom)
+    runtimeOnly(libs.surf.jumppad.minestom)
+    runtimeOnly(libs.surf.parkour.minestom)
+    runtimeOnly(libs.surf.profile.minestom)
+    runtimeOnly(libs.surf.content.creator.minestom)
+    runtimeOnly(libs.surf.friends.minestom)
+    runtimeOnly(libs.surf.social.minestom)
+    runtimeOnly(libs.surf.tab.minestom)
+    runtimeOnly(libs.surf.nametag.minestom)
+    runtimeOnly(libs.surf.teleporter.minestom)
+    runtimeOnly(libs.surf.trophy.minestom)
+    runtimeOnly(libs.surf.lobby.minestom)
 
+    // Embedded in the server jar, since the bootstrap downloads without credentials. Only the plugin
+    // itself is embedded; the dependencies of ban bypass are downloaded like every other library.
     if (internalPlugins) {
-        runtimeOnly(libs.surf.anticheat.minestom) { isTransitive = false }
+        shaded(libs.surf.anticheat.minestom) { isTransitive = false }
+        shaded(libs.surf.ban.bypass.minestom) { isTransitive = false }
         runtimeOnly(libs.surf.ban.bypass.minestom)
-    }
-
-    testImplementation(libs.minestom.testing)
-    testImplementation(libs.flare.fastutil)
-    testImplementation(libs.npc)
-    testImplementation(libs.guice)
-    testImplementation(libs.mini.placeholders.minestom) { isTransitive = false }
-    testImplementation(libs.brigadier)
-    testImplementation(libs.configurate.yaml)
-    testImplementation(libs.configurate.kotlin)
-    testImplementation(libs.junit.jupiter)
-    testImplementation(libs.coroutines.test)
-    testImplementation(kotlin("test"))
-}
-
-kotlin {
-    jvmToolchain(25)
-    compilerOptions {
-        javaParameters = true
-        optIn.add("dev.slne.minestom.lobby.api.util.InternalMinestomLobbyApi")
     }
 }
 
@@ -221,65 +170,29 @@ sourceSets.main {
     resources.srcDir(generateBuildInfo.map { it.destinationFile.get().asFile.parentFile })
 }
 
-val serverMainClass = "dev.slne.minestom.lobby.MainKt"
-
-application {
-    mainClass = serverMainClass
-}
-
 tasks.jar {
     archiveClassifier = "thin"
+}
+
+tasks.test {
+    // Lets the surf api start without the Mixin agent of the server jar
+    systemProperty("minestom.inside-test", "true")
+}
+
+// The server jar is the only distribution
+tasks.named { it in setOf("distZip", "distTar", "shadowDistZip", "shadowDistTar") }.configureEach {
+    enabled = false
+}
+
+// java-gradle-plugin, applied by the surf plugin, would publish a second publication under the
+// coordinates of the server jar
+gradlePlugin {
+    isAutomatedPublishing = false
 }
 
 tasks.shadowJar {
     archiveClassifier = ""
     isZip64 = true
-    duplicatesStrategy = DuplicatesStrategy.INCLUDE
-    mergeServiceFiles()
-    transform<Log4j2PluginsCacheFileTransformer>()
-
-    manifest {
-        attributes["Main-Class"] = serverMainClass
-        attributes["Launcher-Agent-Class"] =
-            "dev.slne.minestom.lobby.server.instrumentation.LobbyAgent"
-
-        attributes["Can-Redefine-Classes"] = "true"
-        attributes["Can-Retransform-Classes"] = "true"
-
-        attributes["Multi-Release"] = "true"
-
-        attributes(
-            mapOf(
-                "Implementation-Version" to libs.versions.asm.get()
-            ),
-            "org/objectweb/asm/"
-        )
-    }
-}
-
-tasks.writeDependencies {
-    val patternField = SimpleRelocator::class.java.getDeclaredField("pattern")
-        .apply { isAccessible = true }
-    val shadedPatternField = SimpleRelocator::class.java.getDeclaredField("shadedPattern")
-        .apply { isAccessible = true }
-
-    val relocators = tasks.shadowJar.get().relocators.get()
-    val simpleRelocators = relocators.filterIsInstance<SimpleRelocator>()
-    require(simpleRelocators.size == relocators.size) {
-        "Cannot mirror relocations onto $name: " +
-                (relocators - simpleRelocators.toSet()).joinToString { it::class.java.name } +
-                " are no SimpleRelocators"
-    }
-
-    simpleRelocators.forEach { relocator ->
-        ShadowGremlin.relocate(
-            this,
-            patternField.get(relocator) as String,
-            shadedPatternField.get(relocator) as String,
-            relocator.includes.toSet(),
-            relocator.excludes.toSet()
-        )
-    }
 }
 
 tasks.build {

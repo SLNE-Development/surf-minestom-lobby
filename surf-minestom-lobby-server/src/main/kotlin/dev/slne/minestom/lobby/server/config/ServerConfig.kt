@@ -197,7 +197,7 @@ data class ServerConfig(
             """
             Vanilla's chat-spam-threshold-seconds. Each chat message adds 20 to a
             counter that drains by 1 per tick; exceeding 20 * this value disconnects
-            the player with "disconnect.spam".
+            the player with "disconnect.spam". 0 or less disables the check.
             """
         )
         val chatSpamThresholdSeconds: Int = 10,
@@ -224,8 +224,8 @@ data class ServerConfig(
         @Setting("non-ticking-entity-types")
         @Comment(
             """
-        Entity types whose Entity.tick(long) invocation is completely skipped.
-        These entities receive no normal Minestom entity tick processing.
+        Entity types that do not tick: their own update, physics and tick events are
+        skipped, while tasks on their scheduler keep running. minecraft:player is not allowed.
         """
         )
         val nonTickingEntityTypes: Set<String> = setOf(

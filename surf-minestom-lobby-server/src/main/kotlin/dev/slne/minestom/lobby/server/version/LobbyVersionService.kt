@@ -2,7 +2,7 @@ package dev.slne.minestom.lobby.server.version
 
 import com.google.inject.Inject
 import com.google.inject.Singleton
-import dev.slne.minestom.lobby.api.coroutine.MinestomDispatchers
+import dev.slne.surf.api.minestom.coroutine.MinestomDispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext

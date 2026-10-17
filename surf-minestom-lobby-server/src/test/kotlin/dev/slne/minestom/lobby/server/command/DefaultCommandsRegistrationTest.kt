@@ -1,25 +1,21 @@
 package dev.slne.minestom.lobby.server.command
 
 import com.google.inject.Provider
-import dev.slne.minestom.lobby.api.chat.RemoteChatSender
-import dev.slne.minestom.lobby.api.chat.RemoteSignedMessage
-import dev.slne.minestom.lobby.api.command.commandapi.CommandAPI
-import dev.slne.minestom.lobby.api.player.LobbyPlayer
-import dev.slne.minestom.lobby.server.command.commandapi.MinestomCommandAPIPlatform
-import dev.slne.minestom.lobby.server.command.commandapi.MinestomCommandOwnership
-import dev.slne.minestom.lobby.server.command.commandapi.runCommand
+import com.mojang.brigadier.exceptions.CommandSyntaxException
 import dev.slne.minestom.lobby.server.command.impl.*
 import dev.slne.minestom.lobby.server.version.LobbyVersionService
-import net.kyori.adventure.chat.SignedMessage
-import net.kyori.adventure.text.Component
+import dev.slne.surf.api.minestom.command.CommandAPI
+import dev.slne.surf.api.minestom.permission.PermissionProvider
+import dev.slne.surf.api.minestom.server.impl.command.CommandAPIHook
+import dev.slne.surf.api.minestom.server.surfMinestomServer
+import net.kyori.adventure.util.TriState
 import net.minestom.server.command.CommandManager
+import net.minestom.server.command.CommandSender
 import net.minestom.server.coordinate.Pos
-import net.minestom.server.crypto.ChatSession
 import net.minestom.server.entity.GameMode
 import net.minestom.server.entity.Player
 import net.minestom.server.instance.Instance
 import net.minestom.server.network.player.GameProfile
-import net.minestom.server.network.player.PlayerConnection
 import net.minestom.testing.Env
 import net.minestom.testing.EnvTest
 import net.minestom.testing.TestConnection
@@ -35,19 +31,19 @@ private val DEFAULT_COMMAND_NAMES =
 class DefaultCommandsRegistrationTest {
     @Test
     fun `every default command is claimed by the command api`(env: Env) =
-        withPlatform(env) { _, ownership ->
+        withSurfApi(env) {
             registerAll()
 
             DEFAULT_COMMAND_NAMES.forEach { name ->
-                assertTrue(ownership.ownsInput(name), "'$name' was not registered")
+                assertTrue(CommandAPIHook.owns(name), "'$name' was not registered")
             }
-            assertTrue(ownership.ownsInput("gm"), "the gamemode alias was not registered")
-            assertTrue(ownership.ownsInput("ver"), "the version alias was not registered")
+            assertTrue(CommandAPIHook.owns("gm"), "the gamemode alias was not registered")
+            assertTrue(CommandAPIHook.owns("ver"), "the version alias was not registered")
         }
 
     @Test
     fun `a command is hidden from a sender without its permission`(env: Env) =
-        withPlatform(env) { manager, _ ->
+        withSurfApi(env) { manager ->
             registerAll()
 
             val instance = env.createEmptyInstance()
@@ -55,8 +51,8 @@ class DefaultCommandsRegistrationTest {
             try {
                 player = connect(env.createConnection(), instance)
 
-                // An ordinary player holds no lobby permission, so every default command is
-                // invisible to it and its input cannot resolve.
+                // Without a permission provider a player holds no lobby permission, so every
+                // default command is invisible to it and its input cannot resolve.
                 DEFAULT_COMMAND_NAMES.forEach { name ->
                     assertFalse(
                         runCommand(player, name),
@@ -71,48 +67,42 @@ class DefaultCommandsRegistrationTest {
         }
 
     @Test
-    fun `player-only and branch executors dispatch for a permitted player`(env: Env) {
-        env.process().connection().setPlayerProvider(::PermittedLobbyPlayer)
-        try {
-            withPlatform(env) { manager, _ ->
-                killCommand()
-                gamemodeCommand()
+    fun `player-only and branch executors dispatch for a permitted player`(env: Env) =
+        withSurfApi(env, PermissionProvider { _, _ -> TriState.TRUE }) { manager ->
+            killCommand()
+            gamemodeCommand()
 
-                val instance = env.createEmptyInstance()
-                var player: Player? = null
-                try {
-                    player = connect(
-                        env.createConnection(GameProfile(UUID.randomUUID(), "Tester")),
-                        instance,
-                    )
+            val instance = env.createEmptyInstance()
+            var player: Player? = null
+            try {
+                player = connect(
+                    env.createConnection(GameProfile(UUID.randomUUID(), "Tester")),
+                    instance,
+                )
 
-                    assertTrue(
-                        runCommand(player, "kill"),
-                        "the player-only root executor of 'kill' is unreachable",
-                    )
-                    assertTrue(
-                        runCommand(player, "gamemode creative"),
-                        "the player-only executor on a non-terminal argument node is unreachable",
-                    )
-                    // The command applies the mode on the next tick
-                    env.tick()
-                    assertEquals(GameMode.CREATIVE, player.gameMode)
+                assertTrue(
+                    runCommand(player, "kill"),
+                    "the player-only root executor of 'kill' is unreachable",
+                )
+                assertTrue(
+                    runCommand(player, "gamemode creative"),
+                    "the player-only executor on a non-terminal argument node is unreachable",
+                )
+                // The command applies the mode on the next tick
+                env.tick()
+                assertEquals(GameMode.CREATIVE, player.gameMode)
 
-                    assertTrue(
-                        runCommand(manager.consoleSender, "gamemode survival Tester"),
-                        "the target branch of 'gamemode' is unreachable",
-                    )
-                    env.tick()
-                    assertEquals(GameMode.SURVIVAL, player.gameMode)
-                } finally {
-                    player?.remove()
-                    env.destroyInstance(instance)
-                }
+                assertTrue(
+                    runCommand(manager.consoleSender, "gamemode survival Tester"),
+                    "the target branch of 'gamemode' is unreachable",
+                )
+                env.tick()
+                assertEquals(GameMode.SURVIVAL, player.gameMode)
+            } finally {
+                player?.remove()
+                env.destroyInstance(instance)
             }
-        } finally {
-            env.process().connection().setPlayerProvider(null)
         }
-    }
 
     private fun registerAll() {
         gamemodeCommand()
@@ -124,17 +114,35 @@ class DefaultCommandsRegistrationTest {
         versionCommand(LobbyVersionService())
     }
 
-    private fun withPlatform(env: Env, block: (CommandManager, MinestomCommandOwnership) -> Unit) {
-        val manager = env.process().command()
-        val ownership = MinestomCommandOwnership()
-        val platform = MinestomCommandAPIPlatform(manager, ownership)
-        CommandAPI.installPlatform(platform)
-        try {
-            block(manager, ownership)
-        } finally {
-            platform.close()
-            CommandAPI.uninstallPlatform(platform)
+    /**
+     * Runs [block] while the surf api runs, which installs the CommandAPI the commands register with.
+     */
+    private fun withSurfApi(
+        env: Env,
+        permissions: PermissionProvider? = null,
+        block: (CommandManager) -> Unit,
+    ) {
+        val api = surfMinestomServer {
+            recommendedServerProperties = false
+            permissions?.let(::permissions)
         }
+
+        try {
+            block(env.process().command())
+        } finally {
+            api.shutdown()
+        }
+    }
+
+    /**
+     * Dispatches [input] through the CommandAPI, as the server jar does through its Mixin, and
+     * returns whether it ran.
+     */
+    private fun runCommand(sender: CommandSender, input: String): Boolean = try {
+        CommandAPI.execute(sender, input)
+        true
+    } catch (_: CommandSyntaxException) {
+        false
     }
 
     private fun connect(connection: TestConnection, instance: Instance): Player {
@@ -145,31 +153,5 @@ class DefaultCommandsRegistrationTest {
                 .onFailure(player::completeExceptionally)
         }
         return player.join()
-    }
-
-    private class PermittedLobbyPlayer(
-        connection: PlayerConnection,
-        profile: GameProfile,
-    ) : LobbyPlayer(connection, profile) {
-        override fun hasPermission(permission: String): Boolean = true
-
-        override fun sendSignedMessage(
-            message: SignedMessage,
-            boundName: Component,
-            unsignedContent: Component?,
-        ) = sendMessage(unsignedContent ?: Component.text(message.message()))
-
-        override fun captureSignedMessage(
-            message: SignedMessage,
-            unsignedContent: Component?,
-        ): RemoteSignedMessage? = null
-
-        override fun chatSession(): ChatSession? = null
-
-        override fun sendRemoteSignedMessage(
-            sender: RemoteChatSender,
-            message: RemoteSignedMessage,
-            boundName: Component,
-        ) = Unit
     }
 }

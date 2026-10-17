@@ -1,6 +1,6 @@
 package dev.slne.minestom.lobby.server.world.entity
 
-import dev.slne.minestom.lobby.api.command.entity.editEntityMeta
+import dev.slne.surf.api.minestom.extension.editEntityMeta
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap
 import net.kyori.adventure.key.Key
 import net.kyori.adventure.nbt.CompoundBinaryTag

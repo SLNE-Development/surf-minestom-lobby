@@ -1,31 +1,61 @@
 # Deployment
 
 The lobby server runs in Pterodactyl. Nothing is built at install time — CI
-publishes the runnable fat jar (internal plugins included) to the private
+publishes the runnable server jar (internal plugins included) to the private
 reposilite repository, and the egg's install script only downloads it, so
-"Reinstall server" takes seconds instead of a ~9 minute build.
+"Reinstall server" takes seconds instead of a full build.
 
 ## Pipeline
 
 1. `.github/workflows/publish-server.yml` runs on every push to `master` and
-   via `workflow_dispatch` (for plugin-only updates without a lobby commit —
-   either triggered by the update check below or manually). It builds with
+   via `workflow_dispatch` (for manual republishes). Pushes that only touch
+   `.github/bundled-plugins.lock` are ignored. It builds with
    `-PinternalPlugins=true --refresh-dependencies` — the refresh forces Gradle
    to re-check `+`/SNAPSHOT versions instead of trusting its 24h
-   dynamic-version cache, so a dispatched run always picks up freshly
-   published plugins.
-2. The workflow publishes two variants:
-   - **internal** (anticheat etc. shaded in) to
+   dynamic-version cache, so a run always picks up freshly published plugins.
+   There is no submodule or vendor step: LuckPerms and spark come with the
+   surf-api feature modules.
+2. The workflow publishes two variants of the same jar,
+   `surf-minestom-lobby-server/build/libs/surf-minestom-lobby-server-<version>.jar`
+   (`<version>` is `projectVersion` from `gradle.properties`):
+   - **internal** (anticheat and ban bypass included) to
      `https://reposilite.slne.dev/private` under
      `dev.slne.minestom.lobby:surf-minestom-lobby-server`;
    - **public** (no internal plugins) as asset
-     `surf-minestom-lobby-server.jar` on the rolling `latest` GitHub
-     prerelease of this repository (real versions will use `v1.2.0`-style
-     tags later).
+     `surf-minestom-lobby-server.jar` of the GitHub release `v<version>`, which
+     is marked as the latest release.
 3. The egg install script downloads `latest` (or the version pinned in the
-   `LOBBY_VERSION` egg variable, e.g. `1.2.0`). With `INTERNAL_PLUGINS=true`
+   `LOBBY_VERSION` egg variable, e.g. `2.0.0`). With `INTERNAL_PLUGINS=true`
    it pulls the internal jar from reposilite using a read token; with `false`
    it pulls the public jar from GitHub releases without credentials.
+
+The `surf-minestom-lobby-api` module no longer exists and is not published.
+Its command API lives in surf-api (`dev.slne.surf.api.minestom.command`).
+
+## Jar layout
+
+The server is built with the surf-api Gradle plugin
+`dev.slne.surf.api.gradle.minestom-server`. The jar is a thin bootstrap:
+
+- The jar contains the lobby's own code, the surf-api bootstrap and, in the
+  internal build, the internal plugins, which cannot be downloaded without
+  credentials, see [internal-plugins.md](internal-plugins.md).
+- The bootstrap agent downloads everything else (surf-api, the public plugins,
+  Minestom, log4j, Guice, Polar, komapper, the JDBC drivers, ...) into
+  `libraries/` on first start (`downloadSurfModules = true`). The directory can
+  be changed with `-Dsurf.minestom.libraries=<dir>`. The first start needs
+  network access; keep `libraries/` persistent to avoid downloading again.
+- Plugins on the class path are discovered through
+  `META-INF/services/dev.slne.surf.api.minestom.plugin.SurfMinestomPlugin` and
+  `META-INF/surf-minestom-plugins/<main>.json`. Plugin jars dropped into
+  `plugins/` (with a `minestom-plugin.json`) are loaded as well.
+- LuckPerms and spark are surf-api feature modules (`withLuckPerms()`,
+  `withSpark()`). Their data directories stay `plugins/luckperms` and
+  `plugins/spark`.
+
+The surf plugin also writes `-sources.jar` and `-javadoc.jar` next to the
+server jar. The `jar` task uses the classifier `thin`; the shadow jar has no
+classifier, which is why the workflow picks it by exact name.
 
 ## Plugin update check
 
@@ -34,15 +64,18 @@ build output without any commit here. `.github/workflows/check-plugin-updates.ym
 closes that gap: once a day (03:17 UTC, plus `workflow_dispatch`) it runs
 `.github/scripts/bundled-plugin-versions.sh`, which asks reposilite (public,
 releases and private) and GitHub Packages for the `maven-metadata.xml` of every
-`+` coordinate — the catalog libraries (25 today) plus the
-`minestom-relocations` Gradle plugin marker — and prints the available versions
-per module.
+`+` coordinate — the catalog libraries (25 today, including
+`dev.slne.surf.api:surf-api-minestom-server`) plus the
+`dev.slne.surf.api.gradle.minestom-server` Gradle plugin marker — and prints the
+available versions per module.
 
 That listing is diffed against `.github/bundled-plugins.lock`. If it differs,
-the workflow dispatches `publish-server.yml` and commits the new lock; if not,
-it does nothing. Recording whole version *sets* instead of "the newest version"
-means the check never has to reimplement Gradle's `+` resolution — the tradeoff
-is that a backported or deleted version also causes one extra publish.
+the workflow records it in the lock, bumps the minor version in
+`gradle.properties` and pushes both as one commit to `master`; that push starts
+`publish-server.yml`. If the listing is unchanged, nothing happens. Recording
+whole version *sets* instead of "the newest version" means the check never has
+to reimplement Gradle's `+` resolution — the tradeoff is that a backported or
+deleted version also causes one extra publish.
 
 Notes:
 
@@ -55,7 +88,7 @@ Notes:
   dropping the module — a skipped module would hide an update.
 - `master` is covered by the `Default` ruleset (merge queue + pull request
   required), and the default `GITHUB_TOKEN` cannot be a ruleset bypass actor.
-  The lock is therefore pushed with an app installation token (see below).
+  The commit is therefore pushed with an app installation token (see below).
 - That token has to be handed to `actions/checkout` via `token:` — it is not
   enough to put it in the push URL. Checkout stores its credential as
   `http.https://github.com/.extraheader`, which git sends for *every*
@@ -65,20 +98,20 @@ Notes:
   unconditionally, and `git push origin` just works. Because the token is now
   minted on every run, missing or expired `LOCK_PUSH_APP_*` secrets fail the
   very first step instead of only the runs that found an update.
-- The recording step only runs on `master`. Since the app token bypasses the
-  ruleset, a `workflow_dispatch` from a feature branch would otherwise push
-  that branch's commits to `master` — the probe, the diff and the publish
-  dispatch are branch-safe, the push is not.
-- Unlike `GITHUB_TOKEN`, an app token *does* trigger workflows, so
-  `publish-server.yml` ignores pushes that only touch the lock file. Without
-  that `paths-ignore` the lock commit would publish a second time on top of the
-  dispatched run — and even bootstrap runs would publish.
-- The publish is dispatched before the lock is committed, so a failed push
-  costs a duplicate publish tomorrow rather than a missed update. A failed
-  *publish* is not retried automatically — the lock already moved on, so rerun
-  `publish-server.yml` by hand.
-- LuckPerms and spark are deliberately not polled: both are pinned by commit
-  (submodule / vendored source), so a push already triggers the publish.
+- The workflow always checks out and pushes `master`, so a `workflow_dispatch`
+  from another branch does not push that branch.
+- Unlike `GITHUB_TOKEN`, an app token *does* trigger workflows. An update commit
+  changes `gradle.properties` and therefore publishes the new version. The
+  bootstrap commit only touches the lock file, which `publish-server.yml`
+  ignores via `paths-ignore` — without that, bootstrap runs would publish too.
+- A failed publish is not retried automatically — the lock already moved on, so
+  rerun `publish-server.yml` by hand.
+- LuckPerms and spark are not polled on their own: they arrive with the surf-api
+  feature modules, so a new surf-api release covers them.
+- The check only sees `+` coordinates declared in `gradle/libs.versions.toml`
+  and `id("...") version "+"` plugins in the build scripts. Keep a `+`
+  `surf-api-minestom-server` entry in the catalog even though the Gradle plugin
+  adds the dependency itself, otherwise surf-api releases are not detected.
 - GitHub disables `schedule` triggers on public repositories after ~60 days
   without repository activity. If updates stop appearing, check whether the
   workflow was disabled rather than assuming nothing was released.
@@ -97,9 +130,9 @@ Notes:
     naming the secret.
   - `REPOSILITE_PRIVATE_USER` / `REPOSILITE_PRIVATE_TOKEN`: the CI write token.
   - `LOCK_PUSH_APP_ID` / `LOCK_PUSH_APP_PRIVATE_KEY`: the app that may push the
-    lock file to `master` (see below).
+    lock file and version bump to `master` (see below).
 - Self-hosted runner with bash, git and curl; JDK 25 comes from `setup-java`.
-- A GitHub App for the lock file push, because the `Default` ruleset blocks
+- A GitHub App for the update commit, because the `Default` ruleset blocks
   direct pushes to `master` and `GITHUB_TOKEN` cannot bypass it:
   - the app only needs repository permission `Contents: Read and write`, and
     must be installed on this repository;
@@ -142,7 +175,10 @@ past that the count is reported as a lower bound.
 
 ## Versioning
 
-Currently every master push publishes `1.0.0-SNAPSHOT`; reposilite keeps
-timestamped snapshot files and `latest` resolves to the newest one. Once real
-versions are published (e.g. `1.2.0`), `latest` follows the most recently
-published version, and `LOBBY_VERSION` can pin a server to a specific one.
+The release version is `projectVersion` in `gradle.properties` (`2.0.0` at the
+time of writing). `publish-server.yml` requires a plain `major.minor.patch`
+version, tags the commit `v<version>` and fails if that tag already points to
+another commit, so the version has to be bumped before the next publish. The
+plugin update check bumps the minor version automatically. `latest` follows the
+most recently published version, and `LOBBY_VERSION` can pin a server to a
+specific one.
