@@ -1,10 +1,10 @@
 package dev.slne.minestom.lobby.server.command.impl
 
-import dev.slne.minestom.lobby.api.command.commandapi.dsl.anyExecutor
-import dev.slne.minestom.lobby.api.command.commandapi.dsl.commandTree
-import dev.slne.minestom.lobby.api.command.commandapi.dsl.entitiesArgument
-import dev.slne.minestom.lobby.api.command.commandapi.dsl.playerExecutor
-import dev.slne.minestom.lobby.api.command.entity.displayName
+import dev.slne.surf.api.minestom.command.dsl.anyExecutor
+import dev.slne.surf.api.minestom.command.dsl.commandTree
+import dev.slne.surf.api.minestom.command.dsl.entitiesArgument
+import dev.slne.surf.api.minestom.command.dsl.playerExecutor
+import dev.slne.surf.api.minestom.extension.displayName
 import dev.slne.minestom.lobby.server.permission.LobbyPermissions
 import dev.slne.surf.api.core.messages.adventure.sendText
 import net.kyori.adventure.text.format.NamedTextColor

@@ -1,33 +1,39 @@
 package dev.slne.minestom.lobby.server.permission
 
-import com.google.inject.Inject
 import com.google.inject.Singleton
-import dev.slne.minestom.lobby.api.event.EventRegistrar
-import dev.slne.minestom.lobby.api.extension.ConnectionManager
-import dev.slne.minestom.lobby.api.extension.addListener
-import dev.slne.minestom.lobby.api.player.LobbyPlayer
-import dev.slne.minestom.lobby.api.player.getOnlineLobbyPlayerByUuid
-import dev.slne.minestom.lobby.api.player.lobbyPlayer
-import dev.slne.minestom.lobby.server.integration.luckperms.LuckPermsService
 import dev.slne.minestom.lobby.server.lifecycle.LobbyService
+import dev.slne.surf.api.minestom.event.EventRegistrar
+import dev.slne.surf.api.minestom.extension.ConnectionManager
+import dev.slne.surf.api.minestom.extension.addListener
+import dev.slne.surf.api.minestom.permission.hasPermission
+import dev.slne.surf.api.minestom.server.luckperms.LuckPermsFeature
+import net.kyori.adventure.text.logger.slf4j.ComponentLogger
 import net.luckperms.api.event.EventSubscription
 import net.luckperms.api.event.user.UserDataRecalculateEvent
+import net.minestom.server.entity.Player
 import net.minestom.server.event.Event
 import net.minestom.server.event.EventNode
 import net.minestom.server.event.player.PlayerSpawnEvent
 
+/**
+ * Sets each player's permission level from the `minestom.lobby.op.<level>` permissions.
+ *
+ * Starts once the surf api runs, because it follows permission changes through LuckPerms.
+ */
 @Singleton
-class PermissionLevelService @Inject constructor(
-    private val luckPerms: LuckPermsService,
-) : LobbyService, EventRegistrar {
+class PermissionLevelService : LobbyService, EventRegistrar {
+
+    private companion object {
+        val LOGGER = ComponentLogger.logger()
+    }
 
     private var subscription: EventSubscription<UserDataRecalculateEvent>? = null
 
     override suspend fun start() {
-        subscription = luckPerms.luckPerms.eventBus.subscribe(
+        subscription = LuckPermsFeature.instance.luckPerms.eventBus.subscribe(
             UserDataRecalculateEvent::class.java
         ) { event ->
-            val player = ConnectionManager.getOnlineLobbyPlayerByUuid(event.user.uniqueId)
+            val player = ConnectionManager.getOnlinePlayerByUuid(event.user.uniqueId)
                 ?: return@subscribe
 
             player.scheduleNextTick { apply(player) }
@@ -35,19 +41,24 @@ class PermissionLevelService @Inject constructor(
     }
 
     override suspend fun stop() {
-        subscription?.close()
+        try {
+            subscription?.close()
+        } catch (failure: Exception) {
+            // LuckPerms is disabled together with the surf api, before the lobby services stop
+            LOGGER.debug("Could not close the LuckPerms subscription", failure)
+        }
         subscription = null
     }
 
     override fun register(node: EventNode<Event>) {
-        node.addListener<PlayerSpawnEvent> { event -> apply(event.lobbyPlayer) }
+        node.addListener<PlayerSpawnEvent> { event -> apply(event.player) }
     }
 
-    private fun apply(player: LobbyPlayer) {
+    private fun apply(player: Player) {
         player.permissionLevel = resolveLevel(player)
     }
 
-    private fun resolveLevel(player: LobbyPlayer): Int {
+    private fun resolveLevel(player: Player): Int {
         for (level in LobbyPermissions.MAX_OP_LEVEL downTo 1) {
             if (player.hasPermission(LobbyPermissions.opLevel(level))) return level
         }

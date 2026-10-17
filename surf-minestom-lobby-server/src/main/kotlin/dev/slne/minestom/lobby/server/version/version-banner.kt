@@ -1,6 +1,6 @@
 package dev.slne.minestom.lobby.server.version
 
-import dev.slne.minestom.lobby.api.coroutine.minestomBlockingScope
+import dev.slne.surf.api.minestom.coroutine.minestomBlockingScope
 import kotlinx.coroutines.launch
 import net.minestom.server.MinecraftServer
 import org.slf4j.Logger

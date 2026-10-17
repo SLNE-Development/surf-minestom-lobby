@@ -1,6 +1,6 @@
 package dev.slne.minestom.lobby.server.world
 
-import dev.slne.minestom.lobby.api.extension.getOrThrow
+import dev.slne.surf.api.minestom.extension.getOrThrow
 import net.kyori.adventure.text.format.TextColor.color
 import net.minestom.server.color.AlphaColor
 import net.minestom.server.particle.Particle

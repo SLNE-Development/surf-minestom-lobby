@@ -1,0 +1,112 @@
+{
+    "_comment": "DO NOT EDIT: FILE GENERATED AUTOMATICALLY BY PTERODACTYL PANEL - PTERODACTYL.IO",
+    "meta": {
+        "version": "PTDL_v2",
+        "update_url": null
+    },
+    "exported_at": "2026-10-17T16:00:04+02:00",
+    "name": "Minestom-Lobby",
+    "author": "admin@example.com",
+    "description": "Surf Minestom Lobby. The install script downloads the lobby jar and the plugins listed in PLUGINS.",
+    "features": [],
+    "docker_images": {
+        "Java 25 - Oracle GraalVM": "ghcr.io/donpedrotv/pterodactyl-images:java_25_graalvm_ee",
+        "Java 25 - GraalVM CE": "ghcr.io/goover/java:graalvm_25",
+        "Java 25 - Corretto": "ghcr.io/vanes430/java:corretto_rocky_25",
+        "Java 25 - GraalVM CE (Mimalloc)": "ghcr.io/skullians/native-leak-profiling:java_perf_25_graalvm",
+        "Java 25 - GraalVM CE (Jemalloc)": "ghcr.io/skullians/native-leak-profiling:java_25_graalvm",
+        "Java 25 - Temurin": "ghcr.io/pterodactyl/yolks:java_25",
+        "Java 21": "ghcr.io/pterodactyl/yolks:java_21",
+        "Java 17": "ghcr.io/pterodactyl/yolks:java_17",
+        "Java 16": "ghcr.io/pterodactyl/yolks:java_16",
+        "Java 11": "ghcr.io/pterodactyl/yolks:java_11",
+        "Java 8": "ghcr.io/pterodactyl/yolks:java_8"
+    },
+    "file_denylist": [],
+    "startup": "java -Dterminal.jline=false -Dterminal.ansi=true -jar {{SERVER_JARFILE}}",
+    "config": {
+        "files": "{\r\n    \"config.yml\": {\r\n        \"parser\": \"yml\",\r\n        \"find\": {\r\n            \"address.port\": \"{{server.build.default.port}}\"\r\n        }\r\n    }\r\n}",
+        "startup": "{\r\n    \"done\": [\r\n        \"Surf Minestom Lobby is ready in\"\r\n    ]\r\n}",
+        "logs": "{}",
+        "stop": "stop"
+    },
+    "scripts": {
+        "installation": {
+            "script": "#!/bin/bash\n# Installs the lobby server jar and the plugins listed in PLUGINS instead of building anything\n# (a full build takes ~9 minutes). Runs in the install container of the egg\n# (ghcr.io/parkervcp/yolks:debian); the embedded copy in egg-minestom-lobby.json is identical.\n#\n# LOBBY_VERSION=latest   -> jar of the newest GitHub release\n# LOBBY_VERSION=2.0.0    -> jar of release v2.0.0 (\"v2.0.0\" works as well)\n#\n# PLUGINS                -> list separated by commas, spaces or newlines. Entries:\n#   group:artifact          newest release of the plugin; replaced on every (re)install\n#   group:artifact:version  pinned version; never updated\n#\n# <artifact>-<version>-all.jar is downloaded and stored as plugins/<artifact>-<version>.jar. There\n# is no fallback to the thin jar, it lacks the libraries of the plugin. Jars that are not listed\n# stay untouched, except other jars of the same plugin id (minestom-plugin.json).\n#\n# A -SNAPSHOT version (pinned, or the newest one of a plugin without any release) is resolved\n# through the version-level maven-metadata.xml to the timestamped build of the all jar and stored\n# as plugins/<artifact>-<build>.jar, for example surf-minestom-anticheat-1.0.1-20261017.120000-3.jar.\n# A newer build replaces the old jar, the same build is skipped.\n#\n# Plugin repositories, tried in order. The last two are skipped while their token is empty.\n#   https://reposilite.slne.dev/releases\n#   https://reposilite.slne.dev/public\n#   https://reposilite.slne.dev/private                   MAVEN_REPO_USER / MAVEN_REPO_TOKEN\n#   https://maven.pkg.github.com/SLNE-Development/surf-minestom-anticheat\n#                                                         GITHUB_PACKAGES_USER / GITHUB_PACKAGES_TOKEN\n# A repository that answers 404 or any other status without the jar is recorded and the next one\n# is tried. The plugin fails when no repository serves it.\n#\n# Server Files: /mnt/server\nset -euo pipefail\n\napt update\napt install -y curl unzip jq\n\nSERVER_DIR=\"${SERVER_DIR:-/mnt/server}\"\ncd \"$SERVER_DIR\"\n\nJAR=\"${SERVER_JARFILE:-lobby.jar}\"\nVERSION=\"${LOBBY_VERSION:-latest}\"\nGITHUB_REPO=\"SLNE-Development/surf-minestom-lobby\"\nPLUGIN_DIR=\"plugins\"\n\nWORK=$(mktemp -d)\ncleanup() {\n    rm -rf \"$WORK\" \"$JAR.tmp\"\n    rm -f \"$PLUGIN_DIR\"/.*.part\n}\ntrap cleanup EXIT\n\n# ---------------------------------------------------------------------------------------------\n# Lobby jar\n# ---------------------------------------------------------------------------------------------\n\n# Accept both \"2.0.0\" and \"v2.0.0\".\nVERSION=\"${VERSION//[[:space:]]/}\"\nif [[ -z \"$VERSION\" || \"$VERSION\" == \"latest\" ]]; then\n    # GitHub's /releases/latest endpoint redirects to the release marked as latest.\n    echo \"Downloading the lobby jar of the latest GitHub release\"\n    URL=\"https://github.com/$GITHUB_REPO/releases/latest/download/surf-minestom-lobby-server.jar\"\nelse\n    TAG=\"v${VERSION#v}\"\n    echo \"Downloading the lobby jar of GitHub release $TAG\"\n    URL=\"https://github.com/$GITHUB_REPO/releases/download/$TAG/surf-minestom-lobby-server.jar\"\nfi\n\ncurl -fsSL --retry 3 --retry-delay 2 --connect-timeout 15 --max-time 600 -o \"$JAR.tmp\" \"$URL\"\n\n[[ -s \"$JAR.tmp\" ]] || {\n    echo \"Downloaded jar is empty\"\n    exit 1\n}\n\nmv \"$JAR.tmp\" \"$JAR\"\necho \"Installed $JAR\"\n\n# ---------------------------------------------------------------------------------------------\n# Plugins\n# ---------------------------------------------------------------------------------------------\n\nREPO_NAMES=(releases public private github-anticheat)\nREPO_URLS=(\n    \"https://reposilite.slne.dev/releases\"\n    \"https://reposilite.slne.dev/public\"\n    \"https://reposilite.slne.dev/private\"\n    \"https://maven.pkg.github.com/SLNE-Development/surf-minestom-anticheat\"\n)\nREPO_USERS=(\"\" \"\" \"${MAVEN_REPO_USER:-pterodactyl}\" \"${GITHUB_PACKAGES_USER:-token}\")\nREPO_TOKENS=(\"\" \"\" \"${MAVEN_REPO_TOKEN:-}\" \"${GITHUB_PACKAGES_TOKEN:-}\")\nREPO_SECURED=(0 0 1 1)\n\n# Runs curl against repository $1. The credentials are passed as a curl config on stdin so that\n# they never show up in a process list; curl drops them when a redirect leaves the host.\nrepo_curl() {\n    local index=$1 user token\n    shift\n\n    if [[ -n \"${REPO_TOKENS[index]}\" ]]; then\n        user=${REPO_USERS[index]}\n        token=${REPO_TOKENS[index]}\n        user=${user//\\\\/\\\\\\\\}\n        user=${user//\\\"/\\\\\\\"}\n        token=${token//\\\\/\\\\\\\\}\n        token=${token//\\\"/\\\\\\\"}\n        curl \"$@\" -K - <<<\"user = \\\"$user:$token\\\"\"\n    else\n        curl \"$@\"\n    fi\n}\n\n# Downloads $2 with the credentials of repository $1 into $3 and prints the HTTP status (\"000\"\n# when the request itself failed). The output file is removed unless the status is 200.\nhttp_get() {\n    local index=$1 url=$2 out=$3 status\n\n    status=$(repo_curl \"$index\" -sSL --retry 3 --retry-delay 2 --connect-timeout 15 --max-time 600 \\\n        -o \"$out\" -w '%{http_code}' \"$url\") || status=000\n\n    if [[ \"$status\" != \"200\" ]]; then\n        rm -f \"$out\"\n    fi\n\n    printf '%s' \"$status\"\n}\n\n# Prints the newest version of an artifact-level maven-metadata.xml: <release>, otherwise the\n# highest version without -SNAPSHOT, and only if there is none the highest -SNAPSHOT version.\n# (sort -V ranks 1.0.0-SNAPSHOT above 1.0.0, so the two groups are sorted separately.)\nlatest_from_metadata() {\n    local meta version versions\n\n    meta=$(tr -d '\\r\\n' <\"$1\")\n    version=$(sed -n 's:.*<release>\\([^<]*\\)</release>.*:\\1:p' <<<\"$meta\")\n\n    if [[ -z \"$version\" ]]; then\n        versions=$(grep -oE '<version>[^<]+</version>' <<<\"$meta\" | sed -E 's:</?version>::g' || true)\n        version=$(grep -v -- '-SNAPSHOT$' <<<\"$versions\" | sort -V | tail -n 1 || true)\n\n        if [[ -z \"$version\" ]]; then\n            version=$(grep -- '-SNAPSHOT$' <<<\"$versions\" | sort -V | tail -n 1 || true)\n        fi\n    fi\n\n    printf '%s' \"$version\"\n}\n\n# Prints the <value> (for example 1.0.1-20261017.120000-3) of the jar with the classifier \"all\" in\n# a version-level maven-metadata.xml of a -SNAPSHOT version, or nothing if there is none.\nsnapshot_value() {\n    local meta\n\n    meta=$(tr -d '\\r\\n' <\"$1\")\n    sed 's:</snapshotVersion>:&\\n:g' <<<\"$meta\" |\n        grep -F '<classifier>all</classifier>' |\n        grep -F '<extension>jar</extension>' |\n        sed -n 's:.*<value>\\([^<]*\\)</value>.*:\\1:p' |\n        head -n 1 || true\n}\n\n# Prints the id from the minestom-plugin.json of a jar, or nothing if there is none.\nplugin_id() {\n    unzip -p \"$1\" minestom-plugin.json 2>/dev/null | jq -r '.id // empty' 2>/dev/null || true\n}\n\n# Deletes every jar in plugins/ except $2 whose plugin id is $1, whatever its file name is.\n# Fails as soon as a jar cannot be deleted.\nremove_same_id() {\n    local id=$1 keep=$2 other\n\n    for other in \"$PLUGIN_DIR\"/*.jar; do\n        [[ -f \"$other\" && \"$other\" != \"$keep\" ]] || continue\n\n        if [[ \"$(plugin_id \"$other\")\" == \"$id\" ]]; then\n            echo \"  removing ${other##*/} (replaced by ${keep##*/})\"\n            rm -f \"$other\" || return 1\n        fi\n    done\n}\n\n# Writes the failure reason of entry $1 to $WORK/tried, where the caller picks it up.\nfail_plugin() {\n    printf '%s\\n' \"$1: $2\" >\"$WORK/tried\"\n}\n\n# Installs one list entry. Writes the reason to $WORK/tried when it fails. The function is called\n# as the condition of an if, which disables errexit inside it, so every command that matters\n# is checked explicitly.\ninstall_plugin() {\n    local entry=$1\n    local group artifact pinned=\"\"\n    IFS=: read -r group artifact pinned <<<\"$entry\"\n\n    local base_path=\"${group//./\\/}/$artifact\"\n    local tried=() index name url version file_version part target status id\n\n    for index in \"${!REPO_NAMES[@]}\"; do\n        name=${REPO_NAMES[index]}\n\n        if [[ \"${REPO_SECURED[index]}\" == \"1\" && -z \"${REPO_TOKENS[index]}\" ]]; then\n            tried+=(\"$name: skipped, no token set\")\n            continue\n        fi\n\n        url=\"${REPO_URLS[index]}/$base_path\"\n        version=$pinned\n\n        if [[ -z \"$version\" ]]; then\n            status=$(http_get \"$index\" \"$url/maven-metadata.xml\" \"$WORK/metadata.xml\")\n\n            if [[ \"$status\" != \"200\" ]]; then\n                tried+=(\"$name: HTTP $status (maven-metadata.xml)\")\n                continue\n            fi\n\n            version=$(latest_from_metadata \"$WORK/metadata.xml\")\n\n            if [[ -z \"$version\" ]]; then\n                tried+=(\"$name: no version listed\")\n                continue\n            fi\n        fi\n\n        if [[ ! \"$version\" =~ ^[A-Za-z0-9._+-]+$ ]]; then\n            tried+=(\"$name: unusable version '$version'\")\n            continue\n        fi\n\n        # Gradle uploads a snapshot as timestamped files; the version directory lists them. A newer\n        # build replaces the older one because the build is part of the file name.\n        file_version=$version\n\n        if [[ \"$version\" == *-SNAPSHOT ]]; then\n            status=$(http_get \"$index\" \"$url/$version/maven-metadata.xml\" \"$WORK/snapshot.xml\")\n\n            if [[ \"$status\" != \"200\" ]]; then\n                tried+=(\"$name: HTTP $status ($version/maven-metadata.xml)\")\n                continue\n            fi\n\n            file_version=$(snapshot_value \"$WORK/snapshot.xml\")\n\n            if [[ ! \"$file_version\" =~ ^[A-Za-z0-9._+-]+$ ]]; then\n                tried+=(\"$name: no -all jar listed for $version\")\n                continue\n            fi\n        fi\n\n        target=\"$PLUGIN_DIR/$artifact-$file_version.jar\"\n\n        # An installed jar without a readable id counts as damaged and is downloaded again.\n        if [[ -f \"$target\" ]]; then\n            id=$(plugin_id \"$target\")\n\n            if [[ -n \"$id\" ]]; then\n                echo \"  $artifact-$file_version.jar is already installed\"\n\n                remove_same_id \"$id\" \"$target\" || {\n                    fail_plugin \"$entry\" \"could not remove older jars with the id $id\"\n                    return 1\n                }\n\n                return 0\n            fi\n        fi\n\n        # Every surf plugin publishes a fat jar (-all) that bundles its libraries. A thin jar of the\n        # same version is not a valid install.\n        part=\"$PLUGIN_DIR/.$artifact-$file_version.jar.part\"\n        status=$(http_get \"$index\" \"$url/$version/$artifact-$file_version-all.jar\" \"$part\")\n\n        if [[ \"$status\" != \"200\" ]]; then\n            tried+=(\"$name: HTTP $status\")\n            continue\n        fi\n\n        if [[ ! -s \"$part\" ]]; then\n            rm -f \"$part\"\n            tried+=(\"$name: empty response\")\n            continue\n        fi\n\n        id=$(plugin_id \"$part\")\n\n        if [[ -z \"$id\" ]]; then\n            rm -f \"$part\"\n            fail_plugin \"$entry\" \"the jar from $name has no minestom-plugin.json with an id\"\n            return 1\n        fi\n\n        mv -f \"$part\" \"$target\" || {\n            rm -f \"$part\"\n            fail_plugin \"$entry\" \"could not move the jar from $name to $target\"\n            return 1\n        }\n\n        echo \"  installed $artifact-$file_version.jar (id $id, from $name)\"\n\n        # Other jars of the same plugin are replaced, whatever their file name is.\n        remove_same_id \"$id\" \"$target\" || {\n            fail_plugin \"$entry\" \"installed $target but could not remove older jars with the id $id\"\n            return 1\n        }\n\n        return 0\n    done\n\n    local summary=\"\" item\n    for item in \"${tried[@]}\"; do\n        summary+=\"${summary:+; }$item\"\n    done\n\n    fail_plugin \"$entry\" \"no repository serves the -all jar; $summary\"\n    return 1\n}\n\nmkdir -p \"$PLUGIN_DIR\"\n\n# Commas, tabs and line breaks separate entries like spaces do.\nPLUGIN_ENTRIES=()\nread -r -a PLUGIN_ENTRIES <<<\"$(printf '%s' \"${PLUGINS:-}\" | tr ',\\t\\r\\n' '    ')\" || true\n\nif [[ ${#PLUGIN_ENTRIES[@]} -eq 0 ]]; then\n    echo \"PLUGINS is empty, no plugins installed\"\n    exit 0\nfi\n\necho \"Installing ${#PLUGIN_ENTRIES[@]} plugins into $PLUGIN_DIR/\"\n\nFAILURES=()\nfor entry in \"${PLUGIN_ENTRIES[@]}\"; do\n    if [[ ! \"$entry\" =~ ^[A-Za-z0-9._-]+:[A-Za-z0-9._-]+(:[A-Za-z0-9._+-]+)?$ ]]; then\n        FAILURES+=(\"$entry: expected group:artifact or group:artifact:version\")\n        continue\n    fi\n\n    echo \"$entry\"\n    rm -f \"$WORK/tried\"\n\n    if ! install_plugin \"$entry\"; then\n        FAILURES+=(\"$(cat \"$WORK/tried\" 2>/dev/null || printf '%s: failed' \"$entry\")\")\n    fi\ndone\n\nif [[ ${#FAILURES[@]} -gt 0 ]]; then\n    echo >&2\n    echo \"Could not install ${#FAILURES[@]} of ${#PLUGIN_ENTRIES[@]} plugins:\" >&2\n    printf '  %s\\n' \"${FAILURES[@]}\" >&2\n    exit 1\nfi\n\necho \"Installed ${#PLUGIN_ENTRIES[@]} plugins\"\n",
+            "container": "ghcr.io/parkervcp/yolks:debian",
+            "entrypoint": "bash"
+        }
+    },
+    "variables": [
+        {
+            "name": "Server Jar File",
+            "description": "The name of the server jarfile to run the server with.",
+            "env_variable": "SERVER_JARFILE",
+            "default_value": "lobby.jar",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|regex:/^([\\w\\d._-]+)(\\.jar)$/",
+            "field_type": "text"
+        },
+        {
+            "name": "Lobby Version",
+            "description": "Version of the lobby server jar to install: 'latest' or a specific version like 2.0.0. Applied on every (re)install.",
+            "env_variable": "LOBBY_VERSION",
+            "default_value": "latest",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string",
+            "field_type": "text"
+        },
+        {
+            "name": "Plugins",
+            "description": "Plugins the install script puts into plugins/, separated by commas, spaces or line breaks. 'group:artifact' installs the newest release and updates it on every reinstall, 'group:artifact:version' pins that version. Plugins that are not listed are left untouched.",
+            "env_variable": "PLUGINS",
+            "default_value": "dev.slne.surf.redis:surf-redis-minestom, dev.slne.surf.rabbitmq:surf-rabbitmq-minestom, dev.slne.surf.core:surf-core-minestom, dev.slne.surf.settings:surf-settings-minestom, dev.slne.surf.punish:surf-punish-minestom, dev.slne.surf.chat:surf-chat-minestom, dev.slne.surf.bitmap:surf-bitmap-provider-minestom, dev.slne.surf.clan:surf-clan-minestom, dev.slne.surf.transaction:surf-transaction-minestom, dev.slne.surf.queue:surf-queue-minestom, dev.slne.surf.playtime:surf-playtime-minestom, dev.slne.surf.jumppad:surf-jumppad-minestom, dev.slne.surf.parkour:surf-parkour-minestom, dev.slne.surf.profile:surf-profile-minestom, dev.slne.surf.content.creator:surf-content-creator-minestom, dev.slne.surf.friends:surf-friends-minestom, dev.slne.surf.social:surf-social-minestom, dev.slne.surf.tab:surf-tab-minestom, dev.slne.surf.nametag:surf-nametag-minestom, dev.slne.surf.teleporter:surf-teleporter-minestom, dev.slne.surf.trophy:surf-trophy-minestom, dev.slne.surf.lobby:surf-lobby-minestom",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|max:4000",
+            "field_type": "text"
+        },
+        {
+            "name": "Maven Repo User",
+            "description": "Read token name for the private reposilite repository. Only used together with Maven Repo Token.",
+            "env_variable": "MAVEN_REPO_USER",
+            "default_value": "pterodactyl",
+            "user_viewable": false,
+            "user_editable": false,
+            "rules": "nullable|string",
+            "field_type": "text"
+        },
+        {
+            "name": "Maven Repo Token",
+            "description": "Read token secret for the private reposilite repository (private plugins such as surf-ban-bypass-minestom). The repository is skipped while this is empty.",
+            "env_variable": "MAVEN_REPO_TOKEN",
+            "default_value": "",
+            "user_viewable": false,
+            "user_editable": false,
+            "rules": "nullable|string",
+            "field_type": "text"
+        },
+        {
+            "name": "GitHub Packages User",
+            "description": "GitHub user name for GitHub Packages (surf-minestom-anticheat). Only used together with GitHub Packages Token.",
+            "env_variable": "GITHUB_PACKAGES_USER",
+            "default_value": "",
+            "user_viewable": false,
+            "user_editable": false,
+            "rules": "nullable|string",
+            "field_type": "text"
+        },
+        {
+            "name": "GitHub Packages Token",
+            "description": "Token with read:packages for GitHub Packages (surf-minestom-anticheat). The repository is skipped while this is empty.",
+            "env_variable": "GITHUB_PACKAGES_TOKEN",
+            "default_value": "",
+            "user_viewable": false,
+            "user_editable": false,
+            "rules": "nullable|string",
+            "field_type": "text"
+        }
+    ]
+}

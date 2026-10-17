@@ -1,8 +1,8 @@
 package dev.slne.minestom.lobby.server.command.impl
 
-import dev.slne.minestom.lobby.api.command.commandapi.dsl.anyExecutor
-import dev.slne.minestom.lobby.api.command.commandapi.dsl.commandAPICommand
-import dev.slne.minestom.lobby.api.extension.ConnectionManager
+import dev.slne.surf.api.minestom.command.dsl.anyExecutor
+import dev.slne.surf.api.minestom.command.dsl.commandAPICommand
+import dev.slne.surf.api.minestom.extension.ConnectionManager
 import dev.slne.minestom.lobby.server.permission.LobbyPermissions
 import dev.slne.surf.api.core.messages.adventure.sendText
 import net.kyori.adventure.text.Component

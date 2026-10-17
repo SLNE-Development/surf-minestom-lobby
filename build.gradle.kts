@@ -1,10 +1,5 @@
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 
-plugins {
-    alias(libs.plugins.kotlin.jvm) apply false
-    alias(libs.plugins.shadow) apply false
-}
-
 val projectVersion = providers.gradleProperty("projectVersion").get()
 
 allprojects {

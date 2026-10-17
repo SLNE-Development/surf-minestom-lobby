@@ -15,8 +15,10 @@ logs/
 !/.projectatlas/config.toml
 !/.projectatlas/projectatlas-nonsource-files.toon
 
-# Scratch files of .github/workflows/check-plugin-updates.yml
-/plugin-versions.new
-/plugin-versions.old
-/plugin-versions.diff
-/dispatch.out
+# Scratch files of .github/workflows/check-surf-api-updates.yml
+/surf-api-versions.new
+/surf-api-versions.old
+/surf-api-versions.diff
+
+# Working directory of the server when it is started from the project
+/surf-minestom-lobby-server/run/

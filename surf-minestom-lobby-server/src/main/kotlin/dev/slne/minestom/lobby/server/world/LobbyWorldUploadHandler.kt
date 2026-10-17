@@ -3,7 +3,6 @@ package dev.slne.minestom.lobby.server.world
 import com.google.common.hash.Hashing
 import com.google.inject.Inject
 import com.google.inject.Singleton
-import dev.slne.minestom.lobby.api.key.SurfKey
 import dev.slne.minestom.lobby.server.config.ServerConfig
 import dev.slne.minestom.lobby.server.database.world.LobbyWorldEntity
 import dev.slne.minestom.lobby.server.database.world.LobbyWorldRepository
