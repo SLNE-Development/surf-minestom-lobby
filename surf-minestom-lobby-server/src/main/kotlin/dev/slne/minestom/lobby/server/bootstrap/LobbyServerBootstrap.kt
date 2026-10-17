@@ -7,6 +7,7 @@ import dev.slne.minestom.lobby.server.config.ServerConfig
 import dev.slne.minestom.lobby.server.config.ServerConfigLoader
 import dev.slne.minestom.lobby.server.di.LobbyServerModule
 import dev.slne.minestom.lobby.server.lifecycle.LobbyServerApplication
+import dev.slne.surf.api.minestom.server.exitFlushingLogs
 import kotlinx.coroutines.runBlocking
 import net.minestom.server.MinecraftServer
 import kotlin.io.path.Path
@@ -18,20 +19,28 @@ object LobbyServerBootstrap {
     fun run() {
         val startupStartedAt = System.nanoTime()
 
-        val config = ServerConfigLoader(CONFIG_PATH).also {
-            bootstrapLogger.info("Loading server configuration.")
-        }.load()
+        try {
+            val config = ServerConfigLoader(CONFIG_PATH).also {
+                bootstrapLogger.info("Loading server configuration.")
+            }.load()
 
-        // Has to be set before anything touches Minestom
-        val tickThreads = config.performance.applyTickDispatcherThreads()
+            // Has to be set before anything touches Minestom
+            val tickThreads = config.performance.applyTickDispatcherThreads()
 
-        val minecraftServer = initMinecraftServer(config)
-        tickThreads?.let(::warnIfTickDispatcherThreadsIgnored)
+            val minecraftServer = initMinecraftServer(config)
+            tickThreads?.let(::warnIfTickDispatcherThreadsIgnored)
 
-        val injector = createInjector(config, minecraftServer)
+            val injector = createInjector(config, minecraftServer)
 
-        runBlocking {
-            injector.getInstance(LobbyServerApplication::class.java).start(startupStartedAt)
+            runBlocking {
+                injector.getInstance(LobbyServerApplication::class.java).start(startupStartedAt)
+            }
+        } catch (startupFailure: Throwable) {
+            bootstrapLogger.error("Failed to start Surf Minestom Lobby.", startupFailure)
+
+            // Exit code 1 for the panel; also ends threads a library left behind, e.g. a feature
+            // whose load failed halfway
+            exitFlushingLogs(1)
         }
     }
 

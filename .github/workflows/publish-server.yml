@@ -4,7 +4,7 @@ on:
   push:
     branches: [ master ]
     paths-ignore:
-      - .github/bundled-plugins.lock
+      - .github/surf-api.lock
   workflow_dispatch:
 
 concurrency:
@@ -70,25 +70,19 @@ jobs:
       - name: Build and publish Maven artifacts
         shell: bash
         env:
-          GITHUB_ACTOR: ${{ github.actor }}
-          GITHUB_TOKEN: ${{ secrets.GH_PACKAGES_READ_TOKEN }}
-
           REPOSILITE_USER: ${{ secrets.REPOSILITE_PRIVATE_USER }}
           REPOSILITE_TOKEN: ${{ secrets.REPOSILITE_PRIVATE_TOKEN }}
         run: |
           ./gradlew \
             :surf-minestom-lobby-server:build \
             :surf-minestom-lobby-server:publish \
-            -PinternalPlugins=true \
             --refresh-dependencies
 
-      - name: Build public jar
+      - name: Stage release asset
         shell: bash
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
-          ./gradlew :surf-minestom-lobby-server:shadowJar --refresh-dependencies
-
           cp "surf-minestom-lobby-server/build/libs/surf-minestom-lobby-server-$VERSION.jar" \
              surf-minestom-lobby-server.jar
 

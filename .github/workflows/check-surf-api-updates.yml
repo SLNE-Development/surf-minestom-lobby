@@ -1,4 +1,4 @@
-name: Check plugin updates
+name: Check surf-api updates
 
 on:
   schedule:
@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: check-plugin-updates
+  group: check-surf-api-updates
   cancel-in-progress: false
 
 permissions:
@@ -32,24 +32,20 @@ jobs:
           ref: master
           fetch-depth: 0
 
-      - name: Probe bundled plugin versions
+      - name: Probe surf-api versions
         shell: bash
-        env:
-          GH_PACKAGES_READ_TOKEN: ${{ secrets.GH_PACKAGES_READ_TOKEN }}
-          REPOSILITE_USER: ${{ secrets.REPOSILITE_PRIVATE_USER }}
-          REPOSILITE_TOKEN: ${{ secrets.REPOSILITE_PRIVATE_TOKEN }}
-        run: bash .github/scripts/bundled-plugin-versions.sh > plugin-versions.new
+        run: bash .github/scripts/surf-api-versions.sh > surf-api-versions.new
 
       - name: Compare with the recorded versions
         id: compare
         shell: bash
         run: |
-          lock=.github/bundled-plugins.lock
+          lock=.github/surf-api.lock
 
           if [ ! -f "$lock" ]; then
             state=bootstrap
-          elif tr -d '\r' < "$lock" > plugin-versions.old &&
-            diff -u plugin-versions.old plugin-versions.new > plugin-versions.diff; then
+          elif tr -d '\r' < "$lock" > surf-api-versions.old &&
+            diff -u surf-api-versions.old surf-api-versions.new > surf-api-versions.diff; then
             state=unchanged
           else
             state=updated
@@ -58,7 +54,7 @@ jobs:
           echo "state=$state" >> "$GITHUB_OUTPUT"
 
           {
-            echo "## Bundled plugin update check"
+            echo "## surf-api update check"
             echo
 
             case "$state" in
@@ -67,13 +63,13 @@ jobs:
                 echo "No version bump or publish will be triggered."
                 ;;
               unchanged)
-                echo "No plugin updates."
+                echo "No surf-api updates."
                 ;;
               updated)
-                echo "Plugin updates found."
+                echo "surf-api updates found."
                 echo
                 echo '```diff'
-                tail -n +3 plugin-versions.diff
+                tail -n +3 surf-api-versions.diff
                 echo '```'
                 ;;
             esac
@@ -84,7 +80,7 @@ jobs:
         if: steps.compare.outputs.state == 'updated'
         shell: bash
         run: |
-          cp plugin-versions.new .github/bundled-plugins.lock
+          cp surf-api-versions.new .github/surf-api.lock
 
           current_version="$(sed -n 's/^projectVersion=//p' gradle.properties | tr -d '\r')"
 
@@ -115,7 +111,7 @@ jobs:
       - name: Record initial dependency baseline
         if: steps.compare.outputs.state == 'bootstrap'
         shell: bash
-        run: cp plugin-versions.new .github/bundled-plugins.lock
+        run: cp surf-api-versions.new .github/surf-api.lock
 
       - name: Commit changes
         if: steps.compare.outputs.state != 'unchanged'
@@ -127,7 +123,7 @@ jobs:
           git config user.name github-actions
           git config user.email actions@slne.dev
 
-          git add .github/bundled-plugins.lock gradle.properties
+          git add .github/surf-api.lock gradle.properties
 
           if git diff --cached --quiet; then
             echo "Nothing to commit."
@@ -135,9 +131,9 @@ jobs:
           fi
 
           if [ "$STATE" = "updated" ]; then
-            git commit -m "⬆️ chore(deps): update bundled plugins and bump to $NEXT_VERSION"
+            git commit -m "⬆️ chore(deps): update surf-api and bump to $NEXT_VERSION"
           else
-            git commit -m "⬆️ chore(deps): record bundled plugin versions"
+            git commit -m "⬆️ chore(deps): record surf-api versions"
           fi
 
           git fetch origin master

@@ -8,36 +8,13 @@ hikari = "7.0.2"
 mariadb-jdbc = "3.5.8"
 postgresql-jdbc = "42.7.13"
 
+
 [libraries]
 guice = { module = "com.google.inject:guice", version.ref = "guice" }
 polar = { module = "dev.hollowcube:polar", version.ref = "polar" }
 mini-placeholders-minestom = { module = "io.github.miniplaceholders:miniplaceholders-minestom", version.ref = "mini-placeholders" }
 
 surf-api-minestom-server = { module = "dev.slne.surf.api:surf-api-minestom-server", version = "+" }
-surf-redis-minestom = { module = "dev.slne.surf.redis:surf-redis-minestom", version = "+" }
-surf-rabbitmq-minestom = { module = "dev.slne.surf.rabbitmq:surf-rabbitmq-minestom", version = "+" }
-surf-core-minestom = { module = "dev.slne.surf.core:surf-core-minestom", version = "+" }
-surf-clan-minestom = { module = "dev.slne.surf.clan:surf-clan-minestom", version = "+" }
-surf-lobby-minestom = { module = "dev.slne.surf.lobby:surf-lobby-minestom", version = "+" }
-surf-chat-minestom = { module = "dev.slne.surf.chat:surf-chat-minestom", version = "+" }
-surf-settings-minestom = { module = "dev.slne.surf.settings:surf-settings-minestom", version = "+" }
-surf-punish-minestom = { module = "dev.slne.surf.punish:surf-punish-minestom", version = "+" }
-surf-bitmap-provider-minestom = { module = "dev.slne.surf.bitmap:surf-bitmap-provider-minestom", version = "+" }
-surf-transaction-minestom = { module = "dev.slne.surf.transaction:surf-transaction-minestom", version = "+" }
-surf-queue-minestom = { module = "dev.slne.surf.queue:surf-queue-minestom", version = "+" }
-surf-playtime-minestom = { module = "dev.slne.surf.playtime:surf-playtime-minestom", version = "+" }
-surf-content-creator-minestom = { module = "dev.slne.surf.content.creator:surf-content-creator-minestom", version = "+" }
-surf-friends-minestom = { module = "dev.slne.surf.friends:surf-friends-minestom", version = "+" }
-surf-social-minestom = { module = "dev.slne.surf.social:surf-social-minestom", version = "+" }
-surf-tab-minestom = { module = "dev.slne.surf.tab:surf-tab-minestom", version = "+" }
-surf-jumppad-minestom = { module = "dev.slne.surf.jumppad:surf-jumppad-minestom", version = "+" }
-surf-parkour-minestom = { module = "dev.slne.surf.parkour:surf-parkour-minestom", version = "+" }
-surf-profile-minestom = { module = "dev.slne.surf.profile:surf-profile-minestom", version = "+" }
-surf-nametag-minestom = { module = "dev.slne.surf.nametag:surf-nametag-minestom", version = "+" }
-surf-trophy-minestom = { module = "dev.slne.surf.trophy:surf-trophy-minestom", version = "+" }
-surf-teleporter-minestom = { module = "dev.slne.surf.teleporter:surf-teleporter-minestom", version = "+" }
-surf-ban-bypass-minestom = { module = "dev.slne.surf.bb:surf-ban-bypass-minestom", version = "+" }
-surf-anticheat-minestom = { module = "dev.slne.minestom:surf-minestom-anticheat", version = "+" }
 
 komapper-annotation = { module = "org.komapper:komapper-annotation", version.ref = "komapper" }
 komapper-jdbc = { module = "org.komapper:komapper-jdbc", version.ref = "komapper" }

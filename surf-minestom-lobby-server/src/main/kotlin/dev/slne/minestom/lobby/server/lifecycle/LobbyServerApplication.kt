@@ -23,8 +23,6 @@ import net.minestom.server.MinecraftServer.LOGGER
 import net.minestom.server.entity.EntityType
 import org.jetbrains.annotations.Blocking
 import java.util.concurrent.atomic.AtomicBoolean
-import kotlin.concurrent.thread
-import kotlin.system.exitProcess
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.nanoseconds
 
@@ -37,8 +35,8 @@ import kotlin.time.Duration.Companion.nanoseconds
  * that fails to load or enable fails the startup.
  *
  * Once the surf api runs, [SurfMinestomServer.stop] stops the server: Minestom, the surf api and
- * the plugins, then the lobby services as a shutdown action. The console, `/stop` and the JVM
- * shutdown hook of the surf api all lead to it.
+ * the plugins, then the lobby services as a shutdown action. The console, `/stop` (through
+ * [SurfMinestomServer.exit]) and the JVM shutdown hook of the surf api all lead to it.
  */
 @Singleton
 class LobbyServerApplication @Inject constructor(
@@ -51,9 +49,6 @@ class LobbyServerApplication @Inject constructor(
     private val registrars: Set<@JvmSuppressWildcards EventRegistrar>,
 ) {
     private val started = AtomicBoolean()
-
-    @Volatile
-    private var api: SurfMinestomServer? = null
 
     suspend fun start(startupStartedAt: Long) {
         check(started.compareAndSet(false, true)) {
@@ -71,7 +66,6 @@ class LobbyServerApplication @Inject constructor(
             // Without a running surf api, no shutdown action stops the services
             failStartup(startupFailure) { serverLifecycle.stop() }
         }
-        api = surfApi
 
         try {
             LOGGER.info("Initializing server integrations.")
@@ -102,11 +96,13 @@ class LobbyServerApplication @Inject constructor(
         logVersionBanner(versionService, LOGGER)
     }
 
+    /**
+     * Stops what started so far and rethrows [startupFailure], which the bootstrap logs with its
+     * stack trace.
+     */
     private suspend fun failStartup(startupFailure: Throwable, stop: suspend () -> Unit): Nothing {
-        LOGGER.error(
-            "Failed to start Surf Minestom Lobby.",
-            startupFailure,
-        )
+        // Named before the rollback, which logs on its own and may take a while
+        LOGGER.error("Failed to start Surf Minestom Lobby, rolling back: {}", startupFailure.toString())
 
         try {
             stop()
@@ -172,21 +168,5 @@ class LobbyServerApplication @Inject constructor(
         LOGGER.info("Shutting down core server components.")
         runBlocking { serverLifecycle.stop() }
         LOGGER.info("Core server components shut down.")
-    }
-
-    /**
-     * Stops the server on a thread of its own and exits the process.
-     *
-     * [SurfMinestomServer.stop] waits until the plugins are disabled, which the tick thread running
-     * a player's command must not wait for.
-     */
-    fun beginShutdown() {
-        val surfApi = api ?: return
-
-        // Not a daemon, even when started from the console thread, which is one
-        thread(isDaemon = false, name = "lobby-shutdown", start = true) {
-            surfApi.stop()
-            exitProcess(0)
-        }
     }
 }

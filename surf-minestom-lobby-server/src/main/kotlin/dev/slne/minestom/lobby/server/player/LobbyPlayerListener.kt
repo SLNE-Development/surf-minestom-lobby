@@ -4,7 +4,6 @@ import com.google.inject.Inject
 import com.google.inject.Singleton
 import dev.slne.minestom.lobby.server.config.ServerConfig
 import dev.slne.minestom.lobby.server.permission.LobbyPermissions
-import dev.slne.minestom.lobby.server.util.setPlayListener
 import dev.slne.minestom.lobby.server.world.LobbyWorldService
 import dev.slne.surf.api.minestom.event.EventRegistrar
 import dev.slne.surf.api.minestom.extension.PacketListenerManager
@@ -16,13 +15,10 @@ import dev.slne.surf.api.minestom.player.event.PlayerQuitEvent
 import net.kyori.adventure.text.Component.text
 import net.kyori.adventure.text.format.NamedTextColor
 import net.minestom.server.MinecraftServer
-import net.minestom.server.entity.Player
 import net.minestom.server.event.Event
 import net.minestom.server.event.EventNode
 import net.minestom.server.event.player.AsyncPlayerConfigurationEvent
-import net.minestom.server.event.player.PlayerDisconnectEvent
 import net.minestom.server.event.player.PlayerGameModeRequestEvent
-import net.minestom.server.event.player.PlayerSpawnEvent
 import net.minestom.server.network.packet.client.play.ClientQueryEntityNbtPacket
 
 @Singleton
@@ -38,30 +34,29 @@ class LobbyPlayerListener @Inject constructor(
     override fun register(node: EventNode<Event>) {
         with(node) {
             addListener(::handleJoin)
-            addListener(::handleDisconnect)
+            addListener(::handleQuit)
             addListener(::handlePlayerConfiguration)
             addListener(::handleGameModeRequest)
             addListener(::handlePlayerCount)
-
-            // The lobby announces neither joins nor quits, unlike the surf api by default
-            addListener<PlayerJoinEvent> { event -> event.joinMessage = null }
-            addListener<PlayerQuitEvent> { event -> event.quitMessage = null }
         }
 
-        PacketListenerManager.setPlayListener(::handleQueryEntityNbtPacket)
+        // Answering would hand out the NBT of any entity
+        PacketListenerManager.setPlayListener(ClientQueryEntityNbtPacket::class.java) { _, _ -> }
     }
 
-    private fun handleDisconnect(event: PlayerDisconnectEvent) {
-        if (config.logConnections) {
-            MinecraftServer.LOGGER.info("Player {} disconnected", event.player.username)
-        }
-    }
-
-    private fun handleJoin(event: PlayerSpawnEvent) {
-        if (!event.isFirstSpawn) return
+    private fun handleJoin(event: PlayerJoinEvent) {
+        event.joinMessage = null
 
         if (config.logConnections) {
             MinecraftServer.LOGGER.info("Player {} joined", event.player.username)
+        }
+    }
+
+    private fun handleQuit(event: PlayerQuitEvent) {
+        event.quitMessage = null
+
+        if (config.logConnections) {
+            MinecraftServer.LOGGER.info("Player {} disconnected", event.player.username)
         }
     }
 
@@ -84,10 +79,5 @@ class LobbyPlayerListener @Inject constructor(
         if (event.result == AsyncPlayerCountEvent.Result.KICK_FULL) {
             event.kickMessage = SERVER_FULL
         }
-    }
-
-    @Suppress("UNUSED_PARAMETER")
-    private fun handleQueryEntityNbtPacket(packet: ClientQueryEntityNbtPacket, player: Player) {
-        // No op
     }
 }

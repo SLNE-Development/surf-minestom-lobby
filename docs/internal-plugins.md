@@ -1,73 +1,71 @@
 # Internal plugins
 
-Internal/private plugins (e.g. anticheat, ban bypass) are published to private
-repositories — GitHub Packages or reposilite's `private` repository — and are an
-**optional** part of the build: without access they are simply excluded and the
-build works normally.
+Internal (private) plugins such as anticheat and ban bypass are published to
+private repositories: reposilite's `private` repository or GitHub Packages.
+They are not part of the build. The egg installs them into `plugins/` like every
+other plugin, see [deployment.md](deployment.md#plugins); only the credentials
+and the list entries differ.
 
-> **Both private plugins must be migrated before an internal build is
-> deployed.** `surf-ban-bypass-minestom` and `surf-minestom-anticheat` still use
-> the removed lobby plugin API (`MinestomPlugin`/`MinestomPluginEntrypoint`).
-> The server only loads plugins that implement
+> **Both private plugins must be migrated before they load.**
+> `surf-ban-bypass-minestom` and `surf-minestom-anticheat` still use the removed
+> lobby plugin API (`MinestomPlugin`/`MinestomPluginEntrypoint`). The server only
+> loads plugins that implement
 > `dev.slne.surf.api.minestom.plugin.SurfMinestomPlugin` and are built with the
-> Gradle plugin `dev.slne.surf.api.gradle.minestom`. Until they are migrated,
-> an internal build contains them but does not load them.
+> Gradle plugin `dev.slne.surf.api.gradle.minestom`, which also writes the
+> `minestom-plugin.json` the install script requires. Until they are migrated,
+> the install fails for them (no `minestom-plugin.json` in the jar) or the server
+> does not load them.
 
-## Enabling
+## Credentials
 
-1. Set the credentials in `~/.gradle/gradle.properties`:
+Set these egg variables to make the install script use the private repositories.
+Each repository is skipped while its token is empty.
 
-   ```properties
-   gpr.user=<github username>
-   gpr.key=<github token with read:packages>
-   ```
+| Variable                | Repository                                                              |
+|-------------------------|-------------------------------------------------------------------------|
+| `MAVEN_REPO_USER`       | `https://reposilite.slne.dev/private` (default user `pterodactyl`)      |
+| `MAVEN_REPO_TOKEN`      | `https://reposilite.slne.dev/private`                                   |
+| `GITHUB_PACKAGES_USER`  | `https://maven.pkg.github.com/SLNE-Development/surf-minestom-anticheat` |
+| `GITHUB_PACKAGES_TOKEN` | `https://maven.pkg.github.com/SLNE-Development/surf-minestom-anticheat` |
 
-   In CI, `GITHUB_ACTOR`/`GITHUB_TOKEN` environment variables work as a fallback.
-   Plugins hosted on reposilite instead need `REPOSILITE_USER`/`REPOSILITE_TOKEN`
-   in the environment.
+- The reposilite token only needs read access to `private`.
+- The GitHub token needs `read:packages` and access to the anticheat
+  repository. Without a user, the install script sends a placeholder name,
+  which GitHub accepts together with a token.
+- The tokens are never printed by the install script, and the committed egg
+  (`pterodactyl/egg-minestom-lobby.json`) keeps empty defaults. Set the values in
+  the panel only.
 
-2. Build with `-PinternalPlugins=true` (or put `internalPlugins=true` in
-   `~/.gradle/gradle.properties`).
+## List entries
 
-## How it works
+The internal plugins are not part of the egg's default `PLUGINS` list: they are
+not migrated yet and the install fails for them without credentials. Once a
+plugin is migrated and released, add its entry to `PLUGINS` of the servers that
+have the credentials set. Ready to paste:
 
-Everything lives in `surf-minestom-lobby-server/build.gradle.kts`, gated on the
-`internalPlugins` property. It has to live there: Gradle resolves a configuration
-with the repositories of the *resolving* project, so a repository declared in a
-helper module would never be consulted for the server's classpath.
+```
+dev.slne.minestom:surf-minestom-anticheat
+dev.slne.surf.bb:surf-ban-bypass-minestom
+```
 
-- Every private repository is declared as its own `exclusiveContent` block with
-  credentials, filtered to the coordinates it hosts — so only internal plugins are
-  looked up there and the public repositories are never asked for them. One block
-  per repository is mandatory: `forRepository` takes a single repository, and a
-  second one in the same block would end up a regular repository that is
-  *excluded* from the filtered content.
-- The bootstrap agent downloads surf-api, the public plugins and every other
-  library on first start (`downloadSurfModules = true`), and that download has
-  no credentials. Internal plugins are therefore declared in the `shaded`
-  configuration of the surf Gradle plugin, which embeds them in the server jar
-  and keeps them out of the download list. Both are declared with
-  `isTransitive = false`, so only the plugin itself is embedded; `shaded`
-  would otherwise embed the plugin's whole dependency closure, surf-api
-  included. `surf-ban-bypass-minestom` is declared as `runtimeOnly(...)` as
-  well, so that its dependencies are downloaded like every other library.
-- Discovery at runtime follows the surf-api plugin mechanism, not
-  `ServiceLoader<MinestomPlugin>`: a plugin on the class path is found through
-  `META-INF/services/dev.slne.surf.api.minestom.plugin.SurfMinestomPlugin` and
-  `META-INF/surf-minestom-plugins/<main>.json`, both generated by the Gradle
-  plugin `dev.slne.surf.api.gradle.minestom` when the plugin is built. Embedded
-  plugins keep those files, so they are discovered the same way as downloaded
-  ones.
+Add `:<version>` to pin one. An entry that no repository can serve fails the
+install, so a server without credentials must not list them.
+
+`surf-minestom-anticheat` only publishes `-SNAPSHOT` versions to GitHub Packages.
+The install script supports this: without a release it selects the highest
+snapshot and downloads the newest timestamped build of the fat jar (see
+[deployment.md](deployment.md#plugins)). Every reinstall moves the server to the
+newest build.
 
 ## Adding a plugin
 
-1. Add an `exclusiveContent` block for its repository (if new) and make sure its
-   coordinates are covered by that block's `filter`.
-2. Add the coordinates to `gradle/libs.versions.toml` and a
-   `shaded(...) { isTransitive = false }` line in the `internalPlugins` block of
-   the server build. If the plugin has dependencies, also add `runtimeOnly(...)`
-   so that they are downloaded; dependencies that are only available from a
-   private repository need a `shaded(...)` line of their own.
-3. Make sure the plugin is built as a `SurfMinestomPlugin` (see above).
-4. Extend `.github/scripts/bundled-plugin-versions.sh` if the plugin lives in a
-   repository the update check does not probe yet.
+1. Make sure the plugin is built as a `SurfMinestomPlugin` (see above) and
+   publishes a fat jar `<artifact>-<version>-all.jar` that bundles its
+   libraries, but not surf-api or Minestom.
+2. Add `group:artifact` to `PLUGINS` of every server that needs it. Changing
+   the egg default only affects servers created afterwards: Pterodactyl stores
+   each variable per server when the server is created. No change to the lobby
+   build is needed.
+3. If the plugin lives in a repository the install script does not know yet,
+   extend the `REPO_*` arrays in `pterodactyl/install.sh` and keep
+   the copy in `pterodactyl/egg-minestom-lobby.json` identical.

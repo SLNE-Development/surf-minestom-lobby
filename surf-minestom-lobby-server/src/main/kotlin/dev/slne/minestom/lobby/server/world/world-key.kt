@@ -7,7 +7,7 @@ import net.minestom.server.tag.Tag
 /**
  * The key of the stored world an instance was loaded from.
  *
- * Bundled plugins read this tag themselves and parse its value with `Key.key`, so its name and the
+ * Plugins read this tag themselves and parse its value with `Key.key`, so its name and the
  * `surf:<name>` value format must not change.
  */
 private val WORLD_KEY = Tag.String("surf_lobby_world_key")

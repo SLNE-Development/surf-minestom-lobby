@@ -1,6 +1,5 @@
 package dev.slne.minestom.lobby.server.command
 
-import com.google.inject.Provider
 import com.mojang.brigadier.exceptions.CommandSyntaxException
 import dev.slne.minestom.lobby.server.command.impl.*
 import dev.slne.minestom.lobby.server.version.LobbyVersionService
@@ -110,7 +109,7 @@ class DefaultCommandsRegistrationTest {
         listPlayersCommand()
         kickCommand()
         difficultyCommand()
-        stopCommand(Provider { error("The stop command must not run during registration") })
+        stopCommand { error("The stop command must not run in this test") }
         versionCommand(LobbyVersionService())
     }
 

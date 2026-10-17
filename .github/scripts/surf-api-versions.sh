@@ -1,28 +1,23 @@
 #!/usr/bin/env bash
 # Prints the versions currently available for every dynamically versioned ("+")
-# dependency the lobby server bundles, one line per module:
+# surf-api dependency of the lobby server, one line per module:
 #
 #     group:artifact version version ...
 #
-# The output is a fingerprint of the upstream state: it changes as soon as a
-# bundled plugin gains (or loses) a version, so no reimplementation of Gradle's
-# "+" resolution is needed. .github/workflows/check-plugin-updates.yml diffs it
-# against .github/bundled-plugins.lock to decide whether to rebuild the jar.
-#
-# Reading the internal plugins needs GH_PACKAGES_READ_TOKEN (a token with
-# read:packages) and REPOSILITE_USER/REPOSILITE_TOKEN for the private reposilite
-# repository, see docs/internal-plugins.md.
+# The output is a fingerprint of the upstream state: it changes as soon as surf-api
+# gains (or loses) a version, so no reimplementation of Gradle's "+" resolution is
+# needed. .github/workflows/check-surf-api-updates.yml diffs it against
+# .github/surf-api.lock to decide whether to rebuild the jar. Plugins are not
+# covered: the egg installs them into plugins/, see docs/deployment.md.
 set -euo pipefail
 
 repo_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)
 
 # Mirrors the Maven repositories of the server build (surf-minestom-lobby-server/build.gradle.kts).
-reposilite_repos=(
+repos=(
     https://reposilite.slne.dev/public
     https://reposilite.slne.dev/releases
 )
-anticheat_repo=https://maven.pkg.github.com/SLNE-Development/surf-minestom-anticheat
-reposilite_private_repo=https://reposilite.slne.dev/private
 
 die() {
     echo "error: $*" >&2
@@ -56,9 +51,9 @@ catalog_modules=$(
 [ -n "$catalog_modules" ] ||
     die "no '+' versioned libraries in gradle/libs.versions.toml - did the catalog format change?"
 
-# Marker artifacts of `id("...") version "+"` Gradle plugins. Not bundled
+# Marker artifacts of `id("...") version "+"` Gradle plugins. Not part of the jar
 # themselves, but the surf-api server plugin defines how the jar is built (shading,
-# library download, plugin discovery), so a new release changes the output.
+# library download, mixin setup), so a new release changes the output.
 plugin_modules=$(
     grep -hoE 'id\("[^"]+"\) version "\+"' \
         "$repo_root"/*.gradle.kts "$repo_root"/*/*.gradle.kts |
@@ -75,31 +70,9 @@ while IFS= read -r module; do
     path="${group//.//}/${module#*:}/maven-metadata.xml"
     versions=
 
-    case $group in
-    dev.slne.surf.bb)
-        [ -n "${REPOSILITE_TOKEN:-}" ] ||
-            die "REPOSILITE_TOKEN is not set, so $module cannot be read from the private reposilite repository (see docs/internal-plugins.md)"
-        versions=$(
-            fetch "$reposilite_private_repo/$path" \
-                -u "${REPOSILITE_USER:-x}:$REPOSILITE_TOKEN" |
-                versions_from_metadata
-        ) || die "cannot read $module from the private reposilite repository - are REPOSILITE_USER/REPOSILITE_TOKEN still valid?"
-        ;;
-    dev.slne.minestom*)
-        [ -n "${GH_PACKAGES_READ_TOKEN:-}" ] ||
-            die "GH_PACKAGES_READ_TOKEN is not set, so $module cannot be read from GitHub Packages (see docs/internal-plugins.md)"
-        versions=$(
-            fetch "$anticheat_repo/$path" \
-                -u "${GITHUB_ACTOR:-x}:$GH_PACKAGES_READ_TOKEN" |
-                versions_from_metadata
-        ) || die "cannot read $module from GitHub Packages - is GH_PACKAGES_READ_TOKEN still valid and does it grant read:packages?"
-        ;;
-    *)
-        for repo in "${reposilite_repos[@]}"; do
-            versions+=$(fetch "$repo/$path" | versions_from_metadata)$'\n'
-        done
-        ;;
-    esac
+    for repo in "${repos[@]}"; do
+        versions+=$(fetch "$repo/$path" | versions_from_metadata)$'\n'
+    done
 
     versions=$(printf '%s\n' "$versions" | sed '/^$/d' | LC_ALL=C sort -u | tr '\n' ' ')
     [ -n "$versions" ] || die "$module has no versions listed"

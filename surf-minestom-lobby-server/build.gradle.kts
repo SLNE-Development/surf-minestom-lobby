@@ -2,74 +2,16 @@ plugins {
     id("dev.slne.surf.api.gradle.minestom-server") version "+"
 }
 
-val internalPlugins = providers.gradleProperty("internalPlugins")
-    .map(String::toBoolean)
-    .getOrElse(false)
-
 repositories {
     maven("https://reposilite.slne.dev/public") { name = "slne-repository-public" }
     maven("https://reposilite.slne.dev/releases") { name = "slne-repository-releases" }
-
-    if (internalPlugins) {
-        val githubUser = providers.gradleProperty("gpr.user")
-            .orElse(providers.environmentVariable("GITHUB_ACTOR"))
-        val githubToken = providers.gradleProperty("gpr.key")
-            .orElse(providers.environmentVariable("GITHUB_TOKEN"))
-        val reposiliteUser = providers.environmentVariable("REPOSILITE_USER")
-        val reposiliteToken = providers.environmentVariable("REPOSILITE_TOKEN")
-
-        if (!githubUser.isPresent || !githubToken.isPresent) {
-            logger.warn(
-                "internalPlugins is enabled but GitHub Packages credentials are missing. " +
-                        "Set gpr.user/gpr.key in ~/.gradle/gradle.properties " +
-                        "(or GITHUB_ACTOR/GITHUB_TOKEN in the environment), " +
-                        "or build with -PinternalPlugins=false."
-            )
-        }
-
-        if (!reposiliteUser.isPresent || !reposiliteToken.isPresent) {
-            logger.warn(
-                "internalPlugins is enabled but private reposilite credentials are missing. " +
-                        "Set REPOSILITE_USER/REPOSILITE_TOKEN in the environment, " +
-                        "or build with -PinternalPlugins=false."
-            )
-        }
-
-        exclusiveContent {
-            forRepository {
-                maven("https://maven.pkg.github.com/SLNE-Development/surf-minestom-anticheat") {
-                    name = "github-surf-minestom-anticheat"
-                    credentials {
-                        username = githubUser.orNull
-                        password = githubToken.orNull
-                    }
-                }
-            }
-            filter { includeGroup(libs.surf.anticheat.minestom.get().group) }
-        }
-
-        exclusiveContent {
-            forRepository {
-                maven("https://reposilite.slne.dev/private") {
-                    name = "slne-repository-private"
-                    credentials {
-                        username = reposiliteUser.orNull
-                        password = reposiliteToken.orNull
-                    }
-                }
-            }
-            filter {
-                includeGroup(libs.surf.ban.bypass.minestom.get().group)
-            }
-        }
-    }
 }
 
 surfMinestomServerApi {
     mainClass("dev.slne.minestom.lobby.MainKt")
 
-    // surf-api and the plugins are downloaded on the first start like every other library, which
-    // keeps the server jar small
+    // surf-api is downloaded on the first start like every other library, which keeps the server
+    // jar small. Plugins are not part of the build: the egg installs them into plugins/.
     downloadSurfModules = true
 
     withSignedChat()
@@ -82,7 +24,7 @@ surfMinestomServerApi {
 }
 
 dependencies {
-    // Also added by the Gradle plugin; declared here so that the plugin update check sees surf-api releases
+    // Also added by the Gradle plugin; declared here so that the surf-api update check sees its releases
     implementation(libs.surf.api.minestom.server)
     implementation(libs.guice)
     implementation(libs.polar)
@@ -100,38 +42,6 @@ dependencies {
     implementation(libs.mariadb.jdbc)
     implementation(libs.postgresql.jdbc)
 
-    runtimeOnly(libs.surf.redis.minestom) {
-        artifact { classifier = "all" }
-    }
-    runtimeOnly(libs.surf.rabbitmq.minestom)
-    runtimeOnly(libs.surf.core.minestom)
-    runtimeOnly(libs.surf.settings.minestom)
-    runtimeOnly(libs.surf.punish.minestom)
-    runtimeOnly(libs.surf.chat.minestom)
-    runtimeOnly(libs.surf.bitmap.provider.minestom)
-    runtimeOnly(libs.surf.clan.minestom)
-    runtimeOnly(libs.surf.transaction.minestom)
-    runtimeOnly(libs.surf.queue.minestom)
-    runtimeOnly(libs.surf.playtime.minestom)
-    runtimeOnly(libs.surf.jumppad.minestom)
-    runtimeOnly(libs.surf.parkour.minestom)
-    runtimeOnly(libs.surf.profile.minestom)
-    runtimeOnly(libs.surf.content.creator.minestom)
-    runtimeOnly(libs.surf.friends.minestom)
-    runtimeOnly(libs.surf.social.minestom)
-    runtimeOnly(libs.surf.tab.minestom)
-    runtimeOnly(libs.surf.nametag.minestom)
-    runtimeOnly(libs.surf.teleporter.minestom)
-    runtimeOnly(libs.surf.trophy.minestom)
-    runtimeOnly(libs.surf.lobby.minestom)
-
-    // Embedded in the server jar, since the bootstrap downloads without credentials. Only the plugin
-    // itself is embedded; the dependencies of ban bypass are downloaded like every other library.
-    if (internalPlugins) {
-        shaded(libs.surf.anticheat.minestom) { isTransitive = false }
-        shaded(libs.surf.ban.bypass.minestom) { isTransitive = false }
-        runtimeOnly(libs.surf.ban.bypass.minestom)
-    }
 }
 
 val buildInfoResource = "surf-minestom-lobby-build.properties"
