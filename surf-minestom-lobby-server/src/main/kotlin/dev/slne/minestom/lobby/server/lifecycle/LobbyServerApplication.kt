@@ -23,6 +23,7 @@ import net.minestom.server.MinecraftServer.LOGGER
 import net.minestom.server.entity.EntityType
 import org.jetbrains.annotations.Blocking
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.concurrent.thread
 import kotlin.system.exitProcess
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.nanoseconds
@@ -183,11 +184,9 @@ class LobbyServerApplication @Inject constructor(
         val surfApi = api ?: return
 
         // Not a daemon, even when started from the console thread, which is one
-        Thread({
+        thread(isDaemon = false, name = "lobby-shutdown", start = true) {
             surfApi.stop()
             exitProcess(0)
-        }, "lobby-shutdown").apply {
-            isDaemon = false
-        }.start()
+        }
     }
 }
