@@ -20,12 +20,13 @@ object LobbyServerBootstrap {
         val startupStartedAt = System.nanoTime()
 
         try {
-            val config = ServerConfigLoader(CONFIG_PATH).also {
-                bootstrapLogger.info("Loading server configuration.")
-            }.load()
+            bootstrapLogger.info("Loading server configuration.")
 
-            // Has to be set before anything touches Minestom
-            val tickThreads = config.performance.applyTickDispatcherThreads()
+            // Has to be set before anything touches Minestom, which deserializing the config does
+            var tickThreads: Int? = null
+            val config = ServerConfigLoader(CONFIG_PATH).load { root ->
+                tickThreads = applyTickDispatcherThreads(root)
+            }
 
             val minecraftServer = initMinecraftServer(config)
             tickThreads?.let(::warnIfTickDispatcherThreadsIgnored)

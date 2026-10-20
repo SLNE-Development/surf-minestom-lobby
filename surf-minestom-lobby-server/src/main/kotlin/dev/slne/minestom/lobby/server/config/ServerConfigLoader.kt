@@ -1,6 +1,7 @@
 package dev.slne.minestom.lobby.server.config
 
 import dev.slne.minestom.lobby.server.config.constraints.NonBlank
+import org.spongepowered.configurate.ConfigurationNode
 import org.spongepowered.configurate.kotlin.dataClassFieldDiscoverer
 import org.spongepowered.configurate.kotlin.extensions.get
 import org.spongepowered.configurate.objectmapping.ObjectMapper
@@ -27,12 +28,13 @@ class ServerConfigLoader(private val path: Path) {
         }
         .build()
 
-    fun load(): ServerConfig {
+    fun load(beforeDeserialize: (ConfigurationNode) -> Unit = {}): ServerConfig {
         path.parent?.let(Files::createDirectories)
 
         val fileExisted = Files.exists(path)
         val root = loader.load()
-        val migrated = ConfigMigrations.migrate(root)
+        ConfigMigrations.migrate(root)
+        beforeDeserialize(root)
 
         val config = if (fileExisted) {
             root.get<ServerConfig>()

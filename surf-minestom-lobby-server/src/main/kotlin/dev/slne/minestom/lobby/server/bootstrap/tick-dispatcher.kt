@@ -1,19 +1,25 @@
 package dev.slne.minestom.lobby.server.bootstrap
 
-import dev.slne.minestom.lobby.server.config.ServerConfig
 import net.minestom.server.property.ServerProperties
+import org.spongepowered.configurate.ConfigurationNode
 
 private const val DISPATCHER_THREADS_PROPERTY = "minestom.dispatcher-threads"
 
 /**
- * Sets the number of tick dispatcher threads from the configuration.
+ * Default of `performance.tick-threads`; must match `ServerConfig.PerformanceConfig.tickThreads`.
+ */
+private const val DEFAULT_TICK_THREADS = 1
+
+/**
+ * Sets the number of tick dispatcher threads from `performance.tick-threads` of the raw
+ * configuration [root].
  *
  * Minestom reads its properties once, when [ServerProperties] is initialized, so this has to run
- * before anything touches Minestom.
+ * before anything touches Minestom, including the deserialization of `ServerConfig`.
  *
  * @return the number of threads set, or `null` when it was pinned with `-D`
  */
-internal fun ServerConfig.PerformanceConfig.applyTickDispatcherThreads(): Int? {
+internal fun applyTickDispatcherThreads(root: ConfigurationNode): Int? {
     val existing = System.getProperty(DISPATCHER_THREADS_PROPERTY)
     if (existing != null) {
         bootstrapLogger.info(
@@ -24,6 +30,7 @@ internal fun ServerConfig.PerformanceConfig.applyTickDispatcherThreads(): Int? {
         return null
     }
 
+    val tickThreads = root.node("performance", "tick-threads").getInt(DEFAULT_TICK_THREADS)
     val threads = if (tickThreads <= 0) Runtime.getRuntime().availableProcessors() else tickThreads
 
     System.setProperty(DISPATCHER_THREADS_PROPERTY, threads.toString())
