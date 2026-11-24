@@ -82,8 +82,10 @@ of:
 | `group:artifact`         | The newest release. Replaced by a newer one on every (re)install. |
 | `group:artifact:version` | Exactly this version. Never updated.                              |
 
-The default lists the 22 public surf plugins of the former bundled build, for
-example `dev.slne.surf.chat:surf-chat-minestom`. The internal plugins
+The default lists the 12 public surf plugins of the former bundled build, for
+example `dev.slne.surf.player:surf-player-minestom`, which replaces the former
+chat, clan, content-creator, friends, nametag, playtime, profile, queue,
+settings, social and tab plugins. The internal plugins
 `dev.slne.minestom:surf-minestom-anticheat` and
 `dev.slne.surf.bb:surf-ban-bypass-minestom` are not in it: they are not migrated
 yet and need credentials (see [internal-plugins.md](internal-plugins.md)).
@@ -131,8 +133,8 @@ every problem.
 Jars in `plugins/` that are not listed are left untouched; the script never
 deletes a jar because its entry is missing. To exclude a plugin from a server,
 remove its entry **and** delete `plugins/<artifact>-*.jar`. Plugins that another
-listed plugin requires cannot be removed alone: `surf-core-minestom` and
-`surf-redis-minestom` are required by `surf-chat-minestom`, for example, and the
+listed plugin requires cannot be removed alone: `surf-rabbitmq-minestom` and
+`surf-redis-minestom` are required by `surf-player-minestom`, for example, and the
 server refuses to start when a required plugin is missing (`requireAll`). To
 update, reinstall the server: pinned plugins stay, unpinned ones move to their
 newest release.
@@ -161,7 +163,7 @@ matching token, otherwise the install fails at that entry.
 |-------------------------|-----------------------|-------------------------------------------------|
 | `SERVER_JARFILE`        | `lobby.jar`           | File name of the lobby jar.                     |
 | `LOBBY_VERSION`         | `latest`              | `latest` or a version such as `2.0.0`.          |
-| `PLUGINS`               | the 22 public plugins | Per server; format above.                       |
+| `PLUGINS`               | the 12 public plugins | Per server; format above.                       |
 | `MAVEN_REPO_USER`       | `pterodactyl`         | Read token name for reposilite `private`.       |
 | `MAVEN_REPO_TOKEN`      | empty                 | Read token secret for reposilite `private`.     |
 | `GITHUB_PACKAGES_USER`  | empty                 | GitHub user for GitHub Packages.                |
